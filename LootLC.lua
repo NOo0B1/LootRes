@@ -14,7 +14,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage(a)
 end
 
-local addonVer = "1.0.8b"
+local addonVer = "1.0.8c"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -85,10 +85,13 @@ local linksOpen = false
 
 voterListFrame.voters = {}
 
+VoteButtonFrame.waitingForVotes = false
+
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
     if (cmd) then
         if (cmd == 'show') then
+            VoteButtonFrame.waitingForVotes = false
             VoteButtonFrame:Show()
         end
         if (cmd == 'who') then
@@ -113,6 +116,11 @@ SlashCmdList["LC"] = function(cmd)
 end
 
 VoteButtonFrame:SetScript("OnUpdate", function()
+
+    if (not this.waitingForVotes) then
+        return
+    end
+
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
         if (this.timePassed >= this.timeToVote) then
             closeVoteWindowButton:Enable()
@@ -436,6 +444,7 @@ function VoteButtonFrame:AddPlayers()
         if (GetRaidRosterInfo(i)) then
             local n, r = GetRaidRosterInfo(i);
             if (n == UnitName('player') and (r == 1 or r == 2)) then
+                VoteButtonFrame.waitingForVotes = true
                 VoteButtonFrame:Show()
             end
         end
@@ -512,6 +521,7 @@ function VoteButtonFrame:ResetVars()
 
     voterListFrame.text:SetText('Waiting for votes...')
     voterListFrame.voters = {}
+    voterListFrame.waitingForVotes = false
 end
 
 -- comms
