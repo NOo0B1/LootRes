@@ -14,7 +14,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage(a)
 end
 
-local addonVer = "1.0.8a"
+local addonVer = "1.0.8b"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -447,7 +447,19 @@ function VoteButtonFrame:AddPlayers()
         VoteButtonFrame.playerFrames[i]:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -35 - (25 * i))
         VoteButtonFrame.playerFrames[i]:SetText(name .. " (" .. votes .. ")")
 
-        local cc = getRGBColor(name)
+
+--        local cc = getRGBColor(name)
+        local cc = classColors["priest"]
+
+        for i = 0, GetNumRaidMembers() do
+            if (GetRaidRosterInfo(i)) then
+                local n, r, s, l, c = GetRaidRosterInfo(i);
+                if (n == name) then
+                    cc = classColors[string.lower(c)]
+                    break
+                end
+            end
+        end
 
         VoteButtonFrame.playerFrames[i]:SetTextColor(cc.r, cc.g, cc.b);
 
