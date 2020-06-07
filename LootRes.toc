@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: Loot Res
+## Author: Xerron/Er
+## Version: 0.1
+## Notes: Addon to help with loot reservation system
+## SavedVariables: lootres_reserves
+LootRes.lua
+LootLC.lua
