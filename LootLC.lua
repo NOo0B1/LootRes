@@ -109,11 +109,6 @@ SlashCmdList["LC"] = function(cmd)
             end
             lcWho()
         end
-        if (cmd == 'load') then
-        end
-        if (string.find(cmd, "search", 1)) then
-            --            LootRes:SearchPlayerOrItem(cmd)
-        end
     end
 end
 
@@ -132,9 +127,7 @@ VoteButtonFrame:SetScript("OnUpdate", function()
                 end
                 if i > 4 then voters = voters .. "\n" end
             end
-            --            voters = "Smultron Ilmane Tyrelys Babagiega Faralynn \nMomo Trepp Chlo Er Chlothar Aurelian"
             voterListFrame.text:SetText(voters)
-
         else
             closeVoteWindowButton:Disable()
             this.timePassed = this.timePassed + 1
@@ -204,9 +197,6 @@ function GameTooltip.SetLootItem(self, slot)
     LootResHookSetLootItem(self, slot)
 end
 
---------------------------------------------------------
-
-
 linkTimer:SetScript("OnUpdate", function()
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
         if (T ~= secondsToRoll + 1) then
@@ -235,11 +225,10 @@ linkTimer:SetScript("OnUpdate", function()
             end
 
         else
-            --            print(T)
+            --
         end
     else
-        --        print(math.floor(GetTime()) .. " == " .. (math.floor(this.startTime) + 1) .. " check failed");
-        --        rollTimer:Hide()
+        --
     end
 end)
 
@@ -263,7 +252,6 @@ function BWLLoot()
         local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
 
         local r, g, b = GetItemQualityColor(itemRarity)
-        --        DEFAULT_CHAT_FRAME:AddMessage("\124cff0070dd\124H" .. itemLink .. ":0:0:0:0:0\124h[" .. itemName .. "]\124h\124r")
 
         linkTimer:Hide()
 
@@ -271,16 +259,10 @@ function BWLLoot()
         C = secondsToRoll --count to / to link
 
         SendChatMessage(" " .. GameTooltip.itemLink .. " LINK (" .. secondsToRoll .. " Seconds)", timerChannel);
-
-        --        VoteButtonFrame.text:SetTextColor(r,g,b)
-        --        VoteButtonFrame.text:SetText('Vote: [' .. GameTooltip.itemLink .. ']')
         itemLinkButton:SetText(GameTooltip.itemLink)
-        --        VoteButtonFrame.text:SetText("Vote: \124cff0070dd\124H" .. itemLink .. ":0:0:0:0:0\124h[" .. itemName .. "]\124h\124r")
-        --        VoteButtonFrame.text:SetHyperLink(itemLink)
         itemLinkButton:SetScript("OnClick", function(self)
             SetItemRef(itemLink)
         end)
-
 
         lcItem = itemLink .. "~" .. GameTooltip.itemLink
 
@@ -291,24 +273,20 @@ function BWLLoot()
     end
 end
 
-
 itemLinkButton:SetHeight(24)
 itemLinkButton:SetWidth(256)
 itemLinkButton:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -5)
 itemLinkButton:SetText("[item will be here]")
-
 itemLinkButton:SetNormalTexture("")
 itemLinkButton:SetPushedTexture("")
 itemLinkButton:SetHighlightTexture("")
 itemLinkButton:SetBackdropBorderColor(1, 1, 1)
-
 itemLinkButton:Show()
 
 
-voterListFrame:SetWidth(256) -- Set these to whatever height/width is needed
-voterListFrame:SetHeight(20) -- for your Texture
-voterListFrame:SetMovable(false) -- for your Texture
-
+voterListFrame:SetWidth(256)
+voterListFrame:SetHeight(20)
+voterListFrame:SetMovable(false)
 voterListFrame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     tile = true,
@@ -328,9 +306,8 @@ voterListFrame.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
 voterListFrame.text:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -27)
 voterListFrame.text:SetText('Voters: ')
 
---TitleFrame:SetFrameStrata("MEDIUM")
-TitleFrame:SetWidth(256) -- Set these to whatever height/width is needed
-TitleFrame:SetHeight(25) -- for your Texture
+TitleFrame:SetWidth(256)
+TitleFrame:SetHeight(25)
 TitleFrame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     tile = true,
@@ -345,26 +322,20 @@ TitleFrame.text = TitleFrame:CreateFontString(nil, "ARTWORK")
 TitleFrame.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
 TitleFrame.text:SetPoint("TOP", TitleFrame, "TOP", 0, -5)
 TitleFrame.text:SetText('Turtle WoW BWL Loot Council Vote Addon')
-
 TitleFrame:SetBackdropBorderColor(.5, .5, .5)
 TitleFrame:SetBackdropColor(0, 0, 0)
 TitleFrame:SetPoint("TOP", VoteButtonFrame, "TOP", 0, 18)
-
 TitleFrame:EnableMouse(true)
 TitleFrame:RegisterForDrag("LeftButton")
-
 TitleFrame:SetScript("OnDragStart", function() VoteButtonFrame:StartMoving() end)
 TitleFrame:SetScript("OnDragStop", function()
     VoteButtonFrame:StopMovingOrSizing()
-    --    this.owner:SavePosition()
 end)
 
 
-
---VoteButtonFrame:SetFrameStrata("HIGH")
-VoteButtonFrame:SetWidth(256) -- Set these to whatever height/width is needed
-VoteButtonFrame:SetHeight(150) -- for your Texture
-VoteButtonFrame:SetMovable(true) -- for your Texture
+VoteButtonFrame:SetWidth(256)
+VoteButtonFrame:SetHeight(150)
+VoteButtonFrame:SetMovable(true)
 
 VoteButtonFrame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -384,11 +355,7 @@ VoteButtonFrame:SetMovable(true)
 VoteButtonFrame:SetScript("OnDragStart", function() this:StartMoving() end)
 VoteButtonFrame:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
-    --    this.owner:SavePosition()
 end)
-
-
-
 
 closeVoteWindowButton:SetHeight(24)
 closeVoteWindowButton:SetWidth(100)
@@ -398,7 +365,6 @@ closeVoteWindowButton:SetScript("OnClick", function(self)
     VoteButtonFrame:Hide()
 end)
 closeVoteWindowButton:Show()
-
 
 resetVoteButton:Hide()
 resetVoteButton:SetHeight(24)
@@ -421,19 +387,6 @@ VoteButtonFrame.myVote = ""
 
 function VoteButtonFrame:AddPlayers()
 
-    --    VoteButtonFrame.votes = {
-    --        ["er"] = 2,
-    --        ["er1"] = 2,
-    --        ["er2"] = 2,
-    --        ["er3"] = 2,
-    --        ["er4"] = 2,
-    --        ["er5"] = 2,
-    --        ["er6"] = 2,
-    --        ["er7"] = 2,
-    --        ["er8"] = 2,
-    --        ["er9"] = 2,
-    --    }
-
     local i = 0;
     local names = ""
     for name, votes in next, VoteButtonFrame.votes do
@@ -447,8 +400,6 @@ function VoteButtonFrame:AddPlayers()
         VoteButtonFrame.playerFrames[i]:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -35 - (25 * i))
         VoteButtonFrame.playerFrames[i]:SetText(name .. " (" .. votes .. ")")
 
-
---        local cc = getRGBColor(name)
         local cc = classColors["priest"]
 
         for i = 0, GetNumRaidMembers() do
@@ -492,25 +443,21 @@ function VoteButtonFrame:AddPlayers()
 end
 
 function VoteButtonFrame:Vote(voteName)
-    --    print("votename in vote! : " .. voteName)
     local i = 0
     for name, votes in next, VoteButtonFrame.votes do
         i = i + 1
         if (name == voteName) then
-
             if (VoteButtonFrame.myVote == "") then
-
                 VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] + 1
                 VoteButtonFrame.myVote = voteName
                 SendAddonMessage("TWLC", "myVote:+:" .. voteName, "RAID")
-                --                voterListFrame.voters[name] = true
             else
                 VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] - 1
                 SendAddonMessage("TWLC", "myVote:-:" .. voteName, "RAID")
                 VoteButtonFrame.myVote = ""
-                --                voterListFrame.voters[name] = false
             end
         else
+            -- lock all others
             VoteButtonFrame.playerFrames[i]:Disable()
         end
     end
@@ -524,7 +471,6 @@ function VoteButtonFrame:Vote(voteName)
         end
     end
 
-
     VoteButtonFrame:UpdateView()
 end
 
@@ -536,7 +482,6 @@ function VoteButtonFrame:UpdateView()
         totalVotes = totalVotes + votes
         VoteButtonFrame.playerFrames[i]:SetText(name .. " (" .. votes .. ")")
     end
-    --    print(totalVotes)
 end
 
 function VoteButtonFrame:SendReset()
@@ -569,7 +514,7 @@ function VoteButtonFrame:ResetVars()
     voterListFrame.voters = {}
 end
 
--- comms ------------
+-- comms
 
 comms:SetScript("OnEvent", function()
     if (event) then
@@ -598,8 +543,6 @@ comms:SetScript("OnEvent", function()
                     for n, k in next, voterListFrame.voters do
                         if (k) then
                             numberOfVoters = numberOfVoters + 1
-                        else
---                            numberOfVoters = numberOfVoters - 1
                         end
                     end
                     if (numberOfVoters == 1) then
@@ -614,10 +557,9 @@ comms:SetScript("OnEvent", function()
 end)
 
 
-function comms:recSync(p, t, c, s)
+function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     if (string.find(t, 'item~', 1)) then
         local i = string.split(t, "~")
-        --        VoteButtonFrame.text:SetText('Vote: ' .. i[3] .. '] :')
         itemLinkButton:SetText(i[3])
         itemLinkButton:SetScript("OnClick", function(self)
             SetItemRef(i[2])
@@ -679,20 +621,17 @@ function comms:recSync(p, t, c, s)
 
         VoteButtonFrame:UpdateView()
     end
-    --    if (p) then SendChatMessage("prefix " .. p, "SAY") end
-    --    if (t) then SendChatMessage("text " .. t, "SAY") end
-    --    if (c) then SendChatMessage("channel " .. c, "SAY") end
-    --    if (s) then SendChatMessage("sender " .. s, "SAY") end
 end
 
 function lcWho()
     SendAddonMessage("TWLC", "command:who", "RAID")
 end
 
+-- utils
+
 function trim(s)
     return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 end
-
 
 function string:split(delimiter)
     local result = {}
