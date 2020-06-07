@@ -14,7 +14,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage(a)
 end
 
-local addonVer = "1.0.7"
+local addonVer = "1.0.8a"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -61,7 +61,7 @@ function getRGBColor(p)
     if p == "Chlothar" or p == "Aurelian" then return classColors["paladin"] end
     if p == "Cosmort" then return classColors["warlock"] end
     if p == "Xerrbear" then return classColors["druid"] end
-    return ""
+    return classColors["priest"]
 end
 
 VoteButtonFrame:SetScript("OnShow", function()
@@ -335,8 +335,8 @@ TitleFrame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     tile = true,
     tileSize = 16,
---    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
---    edgeSize = 16,
+    --    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    --    edgeSize = 16,
     insets = { left = 4, right = 4, top = 4, bottom = 4 },
 })
 
@@ -553,7 +553,7 @@ function VoteButtonFrame:ResetVars()
     VoteButtonFrame.myVote = ""
     VoteButtonFrame:SetHeight(100)
 
-    voterListFrame.text:SetText('Voters... ')
+    voterListFrame.text:SetText('Waiting for votes...')
     voterListFrame.voters = {}
 end
 
@@ -581,6 +581,19 @@ comms:SetScript("OnEvent", function()
                         voterListFrame.voters[arg4] = true
                     else
                         voterListFrame.voters[arg4] = false
+                    end
+                    local numberOfVoters = 0
+                    for n, k in next, voterListFrame.voters do
+                        if (k) then
+                            numberOfVoters = numberOfVoters + 1
+                        else
+--                            numberOfVoters = numberOfVoters - 1
+                        end
+                    end
+                    if (numberOfVoters == 1) then
+                        voterListFrame.text:SetText(numberOfVoters .. ' vote')
+                    else
+                        voterListFrame.text:SetText(numberOfVoters .. ' votes')
                     end
                 end
             end
