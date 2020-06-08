@@ -10,17 +10,43 @@ local itemLinkButton = CreateFrame("button", "itemLinkButton", VoteButtonFrame, 
 local closeVoteWindowButton = CreateFrame("button", "CloseWindowButton", VoteButtonFrame, "UIPanelButtonTemplate")
 local voterListFrame = CreateFrame("Frame", "voterListFrame", VoteButtonFrame)
 
+local whoResponderTimer = CreateFrame("Frame", "whoResponderTimer")
+whoResponderTimer:Hide()
+whoResponderTimer:SetScript("OnShow", function()
+    this.startTime = math.floor(GetTime());
+end)
+
 function print(a)
     DEFAULT_CHAT_FRAME:AddMessage(a)
 end
 
-local addonVer = "1.0.8c"
+local addonVer = "1.0.9"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
     this.startTime = math.floor(GetTime());
 end)
 
+
+local roster = {};
+
+function resetRoster()
+    roster = {
+        ["Smultron"] = false,
+        ["Ilmane"] = false,
+        ["Tyrelys"] = false,
+        ["Babagiega"] = false,
+        ["Faralynn"] = false,
+        ["Momo"] = false,
+        ["Trepp"] = false,
+        ["Chlo"] = false,
+        ["Er"] = false,
+        ["Chlothar"] = false,
+        ["Aurelian"] = false,
+--        ["Cosmort"] = false, --dev
+--        ["Xerrbear"] = false --dev
+    }
+end
 
 local classColors = {
     ["warrior"] = { r = 0.78, g = 0.61, b = 0.43, c = "|cffc79c6e" },
@@ -96,6 +122,7 @@ SlashCmdList["LC"] = function(cmd)
         end
         if (cmd == 'who') then
             print("Listing people with the addon (* = can vote):")
+            resetRoster()
             local canVote = false
             for i = 0, GetNumRaidMembers() do
                 if (GetRaidRosterInfo(i)) then
@@ -109,6 +136,9 @@ SlashCmdList["LC"] = function(cmd)
                 print("[LC] - *" .. UnitName('player') .. " (ver. " .. addonVer .. ")")
             else
                 print("[LC] - " .. UnitName('player') .. " (ver. " .. addonVer .. ")")
+            end
+            if (roster[UnitName('player')] ~= nil) then
+                roster[UnitName('player')] = true
             end
             lcWho()
         end
@@ -204,6 +234,20 @@ function GameTooltip.SetLootItem(self, slot)
     GameTooltip.itemLink = GetLootSlotLink(slot)
     LootResHookSetLootItem(self, slot)
 end
+
+whoResponderTimer:SetScript("OnUpdate", function()
+    -- wait for 5 seconds before outputting who responded to who command
+    if (math.floor(GetTime()) == math.floor(this.startTime) + 5) then
+        local missingAddonList = ""
+        for player, response in next, roster do
+            if (not response) then
+                missingAddonList = missingAddonList .. " " .. player
+            end
+        end
+        print("People without addon: " .. missingAddonList)
+        this:Hide()
+    end
+end)
 
 linkTimer:SetScript("OnUpdate", function()
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
@@ -579,7 +623,10 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     end
     if (string.find(t, 'withAddon:', 1)) then
         local i = string.split(t, ":")
-        if (i[2] == UnitName('player')) then
+        if (i[2] == UnitName('player')) then --i[2] = who requested the who
+            if (roster[i[3]] ~= nil) then
+                roster[i[3]] = true --i[3] = responder's name
+            end
             if (i[4]) then
                 print("[LC] - " .. i[3] .. " (ver. " .. i[4] .. ")")
             else
@@ -622,7 +669,6 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
         VoteButtonFrame:AddPlayers()
     end
     if (string.find(t, 'myVote:', 1)) then
-        --                print(t)
         local vote = string.split(t, ':')
         local i = 0
         for name, votes in next, VoteButtonFrame.votes do
@@ -641,6 +687,7 @@ end
 
 function lcWho()
     SendAddonMessage("TWLC", "command:who", "RAID")
+    whoResponderTimer:Show()
 end
 
 -- utils
