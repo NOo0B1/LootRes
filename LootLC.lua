@@ -414,7 +414,9 @@ function VoteButtonFrame:AddPlayers()
             if (GetRaidRosterInfo(i)) then
                 local n, r, s, l, c = GetRaidRosterInfo(i);
                 if (n == name) then
-                    cc = classColors[string.lower(c)]
+                    if classColors[string.lower(c)] then
+                        cc = classColors[string.lower(c)]
+                    end
                     break
                 end
             end
@@ -578,7 +580,11 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     if (string.find(t, 'withAddon:', 1)) then
         local i = string.split(t, ":")
         if (i[2] == UnitName('player')) then
-            print("[LC] - " .. i[3] .. " (ver. " .. i[4] .. ")")
+            if (i[4]) then
+                print("[LC] - " .. i[3] .. " (ver. " .. i[4] .. ")")
+            else
+                print("[LC] - " .. i[3] .. " (ver. unknown)")
+            end
         end
     end
     if (string.find(t, 'command:', 1)) then
