@@ -87,6 +87,28 @@
                 </Scripts>
             </Button>
 
+            <Button name="$parentItemLinkButton" inherits="UIPanelButtonTemplate" text="-">
+                <NormalTexture inherits=""/>
+                <PushedTexture inherits=""/>
+                <DisabledTexture inherits=""/>
+                <HighlightTexture inherits=""/>
+                <Size>
+                    <AbsDimension x="220" y="45"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-100" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                    </OnClick>
+
+                </Scripts>
+            </Button>
+
         </Frames>
 
         <Scripts>
