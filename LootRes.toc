@@ -5,4 +5,4 @@
 ## Notes: Addon to help with loot reservation system
 ## SavedVariables: lootres_reserves
 LootRes.lua
-LootLC.lua
+LootLC.xml

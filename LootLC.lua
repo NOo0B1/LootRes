@@ -1,14 +1,11 @@
-local LootLC = CreateFrame("Frame", "LootLC", GameTooltip)
+local LootLCTooltip = CreateFrame("Frame", "LootLC", GameTooltip)
+
 local linkTimer = CreateFrame("Frame")
-local VoteButtonFrame = CreateFrame("Frame", "VoteButtonFrame", UIParent)
-local TitleFrame = CreateFrame("Frame", "VoteButtonFrame", VoteButtonFrame)
+
 local comms = CreateFrame("Frame")
-local resetVoteButton = CreateFrame("button", "resetVoteButton", VoteButtonFrame, "UIPanelButtonTemplate")
+local resetVoteButton = CreateFrame("Frame", "LCResetVoteButton")
 
-local itemLinkButton = CreateFrame("button", "itemLinkButton", VoteButtonFrame, "UIPanelButtonTemplate")
-
-local closeVoteWindowButton = CreateFrame("button", "CloseWindowButton", VoteButtonFrame, "UIPanelButtonTemplate")
-local voterListFrame = CreateFrame("Frame", "voterListFrame", VoteButtonFrame)
+local PeoplWhoVotedFrame = CreateFrame("Frame", "PeoplWhoVotedFrame")
 
 local whoResponderTimer = CreateFrame("Frame", "whoResponderTimer")
 whoResponderTimer:Hide()
@@ -16,11 +13,14 @@ whoResponderTimer:SetScript("OnShow", function()
     this.startTime = math.floor(GetTime());
 end)
 
+local LootLC = CreateFrame("Frame")
+LootLC:Hide()
+
 function print(a)
     DEFAULT_CHAT_FRAME:AddMessage(a)
 end
 
-local addonVer = "1.0.9"
+local addonVer = "1.1.0"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -43,8 +43,8 @@ function resetRoster()
         ["Er"] = false,
         ["Chlothar"] = false,
         ["Aurelian"] = false,
---        ["Cosmort"] = false, --dev
---        ["Xerrbear"] = false --dev
+        --        ["Cosmort"] = false, --dev
+        --        ["Xerrbear"] = false --dev
     }
 end
 
@@ -90,18 +90,18 @@ function getRGBColor(p)
     return classColors["priest"]
 end
 
-VoteButtonFrame:SetScript("OnShow", function()
+LootLC:SetScript("OnShow", function()
     this.startTime = math.floor(GetTime());
     this.timePassed = 0
     this.timeToVote = 30
 end)
 
-LootLC:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
-LootLC:RegisterEvent("CHAT_MSG_RAID")
-LootLC:RegisterEvent("CHAT_MSG_RAID_LEADER")
+LootLCTooltip:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+LootLCTooltip:RegisterEvent("CHAT_MSG_RAID")
+LootLCTooltip:RegisterEvent("CHAT_MSG_RAID_LEADER")
 comms:RegisterEvent("CHAT_MSG_ADDON")
 
-local secondsToRoll = 10
+local secondsToRoll = 5
 local T = 1 --start
 local C = secondsToRoll --count to
 
@@ -109,16 +109,18 @@ local timerChannel = "RAID_WARNING"
 local lcItem = ""
 local linksOpen = false
 
-voterListFrame.voters = {}
+PeoplWhoVotedFrame.voters = {}
 
-VoteButtonFrame.waitingForVotes = false
+LootLC.waitingForVotes = false
+LootLC.totalVotes = 0
+LootLC.timeLeft = 0
 
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
     if (cmd) then
         if (cmd == 'show') then
-            VoteButtonFrame.waitingForVotes = false
-            VoteButtonFrame:Show()
+            LootLC.waitingForVotes = false
+            getglobal("LootLCWindow"):Show()
         end
         if (cmd == 'who') then
             print("Listing people with the addon (* = can vote):")
@@ -145,7 +147,7 @@ SlashCmdList["LC"] = function(cmd)
     end
 end
 
-VoteButtonFrame:SetScript("OnUpdate", function()
+LootLC:SetScript("OnUpdate", function()
 
     if (not this.waitingForVotes) then
         return
@@ -153,33 +155,43 @@ VoteButtonFrame:SetScript("OnUpdate", function()
 
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
         if (this.timePassed >= this.timeToVote) then
-            closeVoteWindowButton:Enable()
-            closeVoteWindowButton:SetText("Close")
+            if (LootLC.myVote == "") then
+                getglobal("LCCloseButton"):Disable()
+            else
+                getglobal("LCCloseButton"):Enable()
+            end
 
             local voters = ""
             local i = 0
-            for n, k in next, voterListFrame.voters do
+            for n, k in next, PeoplWhoVotedFrame.voters do
                 i = i + 1
                 if (k) then
                     voters = voters .. getColor(n) .. n .. " "
                 end
                 if i > 4 then voters = voters .. "\n" end
             end
-            voterListFrame.text:SetText(voters)
+            getglobal('PeopleWhoVotedNames'):SetText(voters)
         else
-            closeVoteWindowButton:Disable()
+
+            if (LootLC.myVote == "") then
+                getglobal("LCCloseButton"):Disable()
+            else
+                getglobal("LCCloseButton"):Enable()
+            end
+
             this.timePassed = this.timePassed + 1
             this.startTime = math.floor(GetTime())
-            closeVoteWindowButton:SetText("Please Vote (" .. this.timeToVote - this.timePassed .. ")")
+            LootLC.timeLeft = this.timeToVote - this.timePassed
+            LootLC:UpdatePleaseVote()
         end
     end
 end)
 
-LootLC:SetScript("OnEvent", function()
+LootLCTooltip:SetScript("OnEvent", function()
 
     if (event) then
         if ((event == 'CHAT_MSG_RAID' or event == 'CHAT_MSG_RAID_LEADER') and linksOpen) then
-            VoteButtonFrame:CheckLinks(arg1, arg2)
+            LootLC:CheckLinks(arg1, arg2)
         end
         if (event == 'CHAT_MSG_RAID' or event == 'CHAT_MSG_RAID_LEADER') then
             if (IsRaidLeader()) then
@@ -190,22 +202,22 @@ LootLC:SetScript("OnEvent", function()
         end
     end
 
-    local score, r, g, b = LootLC:ScanUnit("mouseover")
+    local score, r, g, b = LootLCTooltip:ScanUnit("mouseover")
 end)
 
-function VoteButtonFrame:CheckLinks(message, author)
+function LootLC:CheckLinks(message, author)
     if (not string.find(message, 'LC:', 1)) then
         if (string.find(message, "[", 1, true)) then
             -- item
             local exists = false
-            for name, votes in next, VoteButtonFrame.votes do
+            for name, votes in next, LootLC.votes do
                 if (name == author) then
                     exists = true
                 end
             end
 
             if (not exists) then
-                VoteButtonFrame.votes[author] = 0
+                LootLC.votes[author] = 0
             end
         else
             -- random shit chat in raid
@@ -213,11 +225,11 @@ function VoteButtonFrame:CheckLinks(message, author)
     end
 end
 
-LootLC:SetScript("OnHide", function()
+LootLCTooltip:SetScript("OnHide", function()
     GameTooltip.itemLink = nil
 end)
 
-function LootLC:ScanUnit(target)
+function LootLCTooltip:ScanUnit(target)
     if not UnitIsPlayer(target) then return nil end
     return 0, 0, 0, 0
 end
@@ -265,13 +277,13 @@ linkTimer:SetScript("OnUpdate", function()
             linksOpen = false
 
             local j = 0
-            for n, v in next, VoteButtonFrame.votes do
+            for n, v in next, LootLC.votes do
                 j = j + 1
             end
 
             if (j > 0) then
-                VoteButtonFrame:AddPlayers()
-                VoteButtonFrame:SetHeight(150 + j * 24)
+                LootLC:AddPlayers()
+                getglobal("LootLCWindow"):SetHeight(200 + j * 40)
             else
                 DEFAULT_CHAT_FRAME:AddMessage("LC: Nobody wants it")
             end
@@ -298,7 +310,7 @@ function BWLLoot()
 
     if GameTooltip.itemLink then
 
-        VoteButtonFrame:SendReset()
+        LootLC:SendReset()
 
         local _, _, itemLink = string.find(GameTooltip.itemLink, "(item:%d+:%d+:%d+:%d+)");
         local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
@@ -311,7 +323,7 @@ function BWLLoot()
         C = secondsToRoll --count to / to link
 
         SendChatMessage(" " .. GameTooltip.itemLink .. " LINK (" .. secondsToRoll .. " Seconds)", timerChannel);
-        itemLinkButton:SetText(GameTooltip.itemLink)
+        getglobal("itemLinkButton"):SetText(GameTooltip.itemLink)
         itemLinkButton:SetScript("OnClick", function(self)
             SetItemRef(itemLink)
         end)
@@ -325,132 +337,37 @@ function BWLLoot()
     end
 end
 
-itemLinkButton:SetHeight(24)
-itemLinkButton:SetWidth(256)
-itemLinkButton:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -5)
-itemLinkButton:SetText("[item will be here]")
-itemLinkButton:SetNormalTexture("")
-itemLinkButton:SetPushedTexture("")
-itemLinkButton:SetHighlightTexture("")
-itemLinkButton:SetBackdropBorderColor(1, 1, 1)
-itemLinkButton:Show()
-
-
-voterListFrame:SetWidth(256)
-voterListFrame:SetHeight(20)
-voterListFrame:SetMovable(false)
-voterListFrame:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    tile = true,
-    tileSize = 16,
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
-})
-
-voterListFrame:SetBackdropBorderColor(.5, .5, .5)
-voterListFrame:SetBackdropColor(0, 0, 0)
-voterListFrame:ClearAllPoints()
-voterListFrame:EnableMouse(true)
-
-voterListFrame.text = voterListFrame:CreateFontString(nil, "ARTWORK")
-voterListFrame.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
-voterListFrame.text:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -27)
-voterListFrame.text:SetText('Voters: ')
-
-TitleFrame:SetWidth(256)
-TitleFrame:SetHeight(25)
-TitleFrame:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    tile = true,
-    tileSize = 16,
-    --    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    --    edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
-})
-
-
-TitleFrame.text = TitleFrame:CreateFontString(nil, "ARTWORK")
-TitleFrame.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
-TitleFrame.text:SetPoint("TOP", TitleFrame, "TOP", 0, -5)
-TitleFrame.text:SetText('Turtle WoW BWL Loot Council Vote Addon')
-TitleFrame:SetBackdropBorderColor(.5, .5, .5)
-TitleFrame:SetBackdropColor(0, 0, 0)
-TitleFrame:SetPoint("TOP", VoteButtonFrame, "TOP", 0, 18)
-TitleFrame:EnableMouse(true)
-TitleFrame:RegisterForDrag("LeftButton")
-TitleFrame:SetScript("OnDragStart", function() VoteButtonFrame:StartMoving() end)
-TitleFrame:SetScript("OnDragStop", function()
-    VoteButtonFrame:StopMovingOrSizing()
-end)
-
-
-VoteButtonFrame:SetWidth(256)
-VoteButtonFrame:SetHeight(150)
-VoteButtonFrame:SetMovable(true)
-
-VoteButtonFrame:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    tile = true,
-    tileSize = 16,
-    --    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    --    edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
-})
-
-VoteButtonFrame:SetBackdropBorderColor(.5, .5, .5)
-VoteButtonFrame:SetBackdropColor(0, 0, 0)
-VoteButtonFrame:ClearAllPoints()
-VoteButtonFrame:EnableMouse(true)
-VoteButtonFrame:RegisterForDrag("LeftButton")
-VoteButtonFrame:SetMovable(true)
-VoteButtonFrame:SetScript("OnDragStart", function() this:StartMoving() end)
-VoteButtonFrame:SetScript("OnDragStop", function()
-    this:StopMovingOrSizing()
-end)
-
-closeVoteWindowButton:SetHeight(24)
-closeVoteWindowButton:SetWidth(100)
-closeVoteWindowButton:SetPoint("BOTTOMLEFT", VoteButtonFrame, "BOTTOMLEFT", 5, 5)
-closeVoteWindowButton:SetText("Close")
-closeVoteWindowButton:SetScript("OnClick", function(self)
-    VoteButtonFrame:Hide()
-end)
-closeVoteWindowButton:Show()
-
-resetVoteButton:Hide()
-resetVoteButton:SetHeight(24)
-resetVoteButton:SetWidth(80)
-resetVoteButton:SetPoint("BOTTOMRIGHT", VoteButtonFrame, "BOTTOMRIGHT", -5, 5)
-resetVoteButton:SetText("Reset Votes")
-resetVoteButton:SetScript("OnClick", function(self)
-    VoteButtonFrame:SendReset()
-end)
-if (IsRaidLeader()) then
-    resetVoteButton:Show()
+--closeVoteWindowButton:SetScript("OnClick", function(self)
+--    LootLCWindow:Hide()
+--end)
+--
+function ResetVoteButton_OnClick()
+    LootLC:SendReset()
 end
 
-VoteButtonFrame:SetPoint("CENTER", 0, 0)
-VoteButtonFrame:Hide()
+--if (IsRaidLeader()) then
+--    resetVoteButton:Show()
+--end
 
-VoteButtonFrame.playerFrames = {}
-VoteButtonFrame.votes = {}
-VoteButtonFrame.myVote = ""
+--getglobal("LootLCWindow"):Hide()
 
-function VoteButtonFrame:AddPlayers()
+LootLC.playerFrames = {}
+LootLC.votes = {}
+LootLC.myVote = ""
+
+function LootLC:AddPlayers()
 
     local i = 0;
     local names = ""
-    for name, votes in next, VoteButtonFrame.votes do
+    for name, votes in next, LootLC.votes do
         i = i + 1
-        if (not VoteButtonFrame.playerFrames[i]) then
-            VoteButtonFrame.playerFrames[i] = CreateFrame("button", "playerNameButton" .. i, VoteButtonFrame, "UIPanelButtonTemplate")
+        if (not LootLC.playerFrames[i]) then
+            LootLC.playerFrames[i] = CreateFrame("Frame", "PlayerWantsFrame" .. i, getglobal("LootLCWindow"), "PlayerWantsFrameTemplate")
         end
 
-        VoteButtonFrame.playerFrames[i]:SetHeight(24)
-        VoteButtonFrame.playerFrames[i]:SetWidth(100)
-        VoteButtonFrame.playerFrames[i]:SetPoint("TOP", VoteButtonFrame, "TOP", 0, -35 - (25 * i))
-        VoteButtonFrame.playerFrames[i]:SetText(name .. " (" .. votes .. ")")
+        LootLC.playerFrames[i]:SetPoint("TOP", getglobal("VotedItemFrame"), "TOP", 0, -10 - (45 * i))
+
+        getglobal("PlayerWantsFrame" .. i .. "Name"):SetText(name);
 
         local cc = classColors["priest"]
 
@@ -466,15 +383,14 @@ function VoteButtonFrame:AddPlayers()
             end
         end
 
-        VoteButtonFrame.playerFrames[i]:SetTextColor(cc.r, cc.g, cc.b);
-
-        VoteButtonFrame.playerFrames[i]:SetID(i)
-        VoteButtonFrame.playerFrames[i]:SetScript("OnClick", function(self, button, down)
-            this.nameFromTextex = string.split(this:GetText(), " ")
+        -- todo
+        getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetID(i)
+        getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetScript("OnClick", function(self, button, down)
+            this.nameFromTextex = string.split(getglobal("PlayerWantsFrame" .. i .. "Name"):GetText(), " ")
             this.nameFromText = this.nameFromTextex[1]
-            VoteButtonFrame:Vote(this.nameFromText)
+            LootLC:Vote(this.nameFromText)
         end)
-        VoteButtonFrame.playerFrames[i]:Show()
+        --        getglobal("PlayerWantsFrame" .. i):Show()
 
         names = names .. " " .. name
     end
@@ -490,61 +406,69 @@ function VoteButtonFrame:AddPlayers()
         if (GetRaidRosterInfo(i)) then
             local n, r = GetRaidRosterInfo(i);
             if (n == UnitName('player') and (r == 1 or r == 2)) then
-                VoteButtonFrame.waitingForVotes = true
-                VoteButtonFrame:Show()
+                LootLC.waitingForVotes = true
+                getglobal("LootLCWindow"):Show()
+                LootLC:Show() -- start voting timer
             end
         end
     end
 end
 
-function VoteButtonFrame:Vote(voteName)
+function LootLC:Vote(voteName)
     local i = 0
-    for name, votes in next, VoteButtonFrame.votes do
+    for name, votes in next, LootLC.votes do
         i = i + 1
         if (name == voteName) then
-            if (VoteButtonFrame.myVote == "") then
-                VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] + 1
-                VoteButtonFrame.myVote = voteName
+            if (LootLC.myVote == "") then
+                LootLC.votes[name] = LootLC.votes[name] + 1
+                LootLC.myVote = voteName
                 SendAddonMessage("TWLC", "myVote:+:" .. voteName, "RAID")
             else
-                VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] - 1
+                LootLC.votes[name] = LootLC.votes[name] - 1
                 SendAddonMessage("TWLC", "myVote:-:" .. voteName, "RAID")
-                VoteButtonFrame.myVote = ""
+                LootLC.myVote = ""
             end
         else
             -- lock all others
-            VoteButtonFrame.playerFrames[i]:Disable()
+            getglobal("LCCloseButton"):Enable()
+            getglobal("PlayerWantsFrame" .. i .. "VoteButton"):Disable()
         end
     end
 
-    if (VoteButtonFrame.myVote == "") then
+    if (LootLC.myVote == "") then
         -- unlockall
+        getglobal("LCCloseButton"):Disable()
         local j = 0
-        for name, votes in next, VoteButtonFrame.votes do
+        for name, votes in next, LootLC.votes do
             j = j + 1
-            VoteButtonFrame.playerFrames[j]:Enable()
+            getglobal("PlayerWantsFrame" .. j .. "VoteButton"):Enable()
         end
     end
 
-    VoteButtonFrame:UpdateView()
+    LootLC:UpdateView()
 end
 
-function VoteButtonFrame:UpdateView()
+function LootLC:UpdateView()
     local i = 0
-    local totalVotes = 0
-    for name, votes in next, VoteButtonFrame.votes do
+    LootLC.totalVotes = 0
+    for name, votes in next, LootLC.votes do
         i = i + 1
-        totalVotes = totalVotes + votes
-        VoteButtonFrame.playerFrames[i]:SetText(name .. " (" .. votes .. ")")
+        LootLC.totalVotes = LootLC.totalVotes + votes
+        getglobal("PlayerWantsFrame" .. i .. "Votes"):SetText(votes)
+        LootLC:UpdatePleaseVote()
     end
 end
 
-function VoteButtonFrame:SendReset()
-    VoteButtonFrame:ResetVars()
+function LootLC:UpdatePleaseVote()
+    getglobal("VotingOpenTimerText"):SetText("Please vote (" .. LootLC.totalVotes .. "/11) - (" .. LootLC.timeLeft .. "s)")
+end
+
+function LootLC:SendReset()
+    LootLC:ResetVars()
     SendAddonMessage("TWLC", "command:reset", "RAID")
 end
 
-function VoteButtonFrame:ResetVars()
+function LootLC:ResetVars()
     local i = 0
     for i = 0, GetNumRaidMembers() do
         if (GetRaidRosterInfo(i)) then
@@ -555,19 +479,19 @@ function VoteButtonFrame:ResetVars()
         end
     end
     i = 0
-    for name, votes in next, VoteButtonFrame.votes do
+    for name, votes in next, LootLC.votes do
         i = i + 1
-        VoteButtonFrame.playerFrames[i]:Hide()
+        LootLC.playerFrames[i]:Hide()
     end
-    VoteButtonFrame:Hide()
-    VoteButtonFrame.playerFrames = {}
-    VoteButtonFrame.votes = {}
-    VoteButtonFrame.myVote = ""
-    VoteButtonFrame:SetHeight(100)
+    getglobal("LootLCWindow"):Hide()
+    LootLC.playerFrames = {}
+    LootLC.votes = {}
+    LootLC.myVote = ""
+    getglobal("LootLCWindow"):SetHeight(100)
 
-    voterListFrame.text:SetText('Waiting for votes...')
-    voterListFrame.voters = {}
-    voterListFrame.waitingForVotes = false
+    getglobal("PeopleWhoVotedNames"):SetText('Waiting for votes...')
+    PeoplWhoVotedFrame.voters = {}
+    PeoplWhoVotedFrame.waitingForVotes = false
 end
 
 -- comms
@@ -591,21 +515,17 @@ comms:SetScript("OnEvent", function()
                     local vote = string.split(arg2, ':')
                     -- myVote:+:Tyrelys
                     if (vote[2] == '+') then
-                        voterListFrame.voters[arg4] = true
+                        PeoplWhoVotedFrame.voters[arg4] = true
                     else
-                        voterListFrame.voters[arg4] = false
+                        PeoplWhoVotedFrame.voters[arg4] = false
                     end
                     local numberOfVoters = 0
-                    for n, k in next, voterListFrame.voters do
+                    for n, k in next, PeoplWhoVotedFrame.voters do
                         if (k) then
                             numberOfVoters = numberOfVoters + 1
                         end
                     end
-                    if (numberOfVoters == 1) then
-                        voterListFrame.text:SetText(numberOfVoters .. ' vote')
-                    else
-                        voterListFrame.text:SetText(numberOfVoters .. ' votes')
-                    end
+                    LootLC:UpdatePleaseVote()
                 end
             end
         end
@@ -637,7 +557,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     if (string.find(t, 'command:', 1)) then
         local com = string.split(t, ":")
         if (com[2] == "reset") then
-            VoteButtonFrame:ResetVars()
+            LootLC:ResetVars()
         end
         if (com[2] == "who") then
             local i = 0
@@ -663,25 +583,25 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
         local k = 0
         for index, player in players do
             k = k + 1
-            VoteButtonFrame.votes[player] = 0
+            LootLC.votes[player] = 0
         end
-        VoteButtonFrame:SetHeight(150 + k * 24)
-        VoteButtonFrame:AddPlayers()
+        getglobal("LootLCWindow"):SetHeight(150 + k * 24)
+        LootLC:AddPlayers()
     end
     if (string.find(t, 'myVote:', 1)) then
         local vote = string.split(t, ':')
         local i = 0
-        for name, votes in next, VoteButtonFrame.votes do
+        for name, votes in next, LootLC.votes do
             if (name == vote[3]) then
                 if (vote[2] == '+') then
-                    VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] + 1
+                    LootLC.votes[name] = LootLC.votes[name] + 1
                 else
-                    VoteButtonFrame.votes[name] = VoteButtonFrame.votes[name] - 1
+                    LootLC.votes[name] = LootLC.votes[name] - 1
                 end
             end
         end
 
-        VoteButtonFrame:UpdateView()
+        LootLC:UpdateView()
     end
 end
 
