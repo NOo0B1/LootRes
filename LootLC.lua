@@ -758,17 +758,19 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     end
     if (string.find(t, 'withAddon:', 1)) then
         local i = string.split(t, ":")
+        local star = ""
         if (string.find(i[3], "*", 1)) then
             i[3] = string.sub(i[3], 2, string.len(i[3]))
+            star = "*"
         end
         if (i[2] == UnitName('player')) then --i[2] = who requested the who
             if (LCRoster[i[3]] ~= nil) then
                 LCRoster[i[3]] = true --i[3] = responder's name
             end
             if (i[4]) then
-                print(colorPlayer(i[3]) .. " (ver. " .. i[4] .. ")")
+                print(star .. colorPlayer(i[3]) .. " (ver. " .. i[4] .. ")")
             else
-                print(colorPlayer(i[3]) .. " (ver. unknown)")
+                print(star .. colorPlayer(i[3]) .. " (ver. unknown)")
             end
         end
     end
