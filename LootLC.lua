@@ -42,8 +42,8 @@ function resetRoster()
         ["Er"] = false,
         ["Chlothar"] = false,
         ["Aurelian"] = false,
---        ["Cosmort"] = false, --dev
---        ["Xerrbear"] = false --dev
+        --        ["Cosmort"] = false, --dev
+        --        ["Xerrbear"] = false --dev
     }
 end
 
@@ -294,7 +294,7 @@ linkTimer:SetScript("OnUpdate", function()
                 LootLC:AddPlayers()
                 getglobal("LootLCWindow"):SetHeight(200 + j * 40)
             else
-                DEFAULT_CHAT_FRAME:AddMessage("LC: Nobody wants it")
+                print("LC: Nobody linked")
             end
 
         else
@@ -355,12 +355,12 @@ end
 function BWLLoot()
 
     if (not UnitInRaid('player')) then
-        DEFAULT_CHAT_FRAME:AddMessage("LC: You are not in a raid.")
+        print("LC: You are not in a raid.")
         return
     end
 
     if (not IsRaidLeader()) then
-        DEFAULT_CHAT_FRAME:AddMessage("LC: You're not Raid Leader.")
+        print("LC: You're not Raid Leader.")
         return
     end
 
@@ -409,7 +409,7 @@ function BWLLoot()
         linkTimer:Show()
         linksOpen = true
     else
-        DEFAULT_CHAT_FRAME:AddMessage("LC: GameTooltip.itemLink = nil")
+        print("LC: GameTooltip.itemLink = nil")
     end
 end
 
@@ -730,6 +730,9 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
     end
     if (string.find(t, 'withAddon:', 1)) then
         local i = string.split(t, ":")
+        if (string.find(i[3], "*", 1)) then
+            i[3] = string.sub(i[3], 2, string.len(i[3]))
+        end
         if (i[2] == UnitName('player')) then --i[2] = who requested the who
             if (LCRoster[i[3]] ~= nil) then
                 LCRoster[i[3]] = true --i[3] = responder's name
