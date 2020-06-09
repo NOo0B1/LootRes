@@ -4,7 +4,7 @@
 
     <Frame name="PlayerWantsFrameTemplate" virtual="true">
         <Size>
-            <AbsDimension x="400" y="40"/>
+            <AbsDimension x="400" y="38"/>
         </Size>
         <Anchors>
             <Anchor point="TOP">
@@ -13,7 +13,9 @@
                 </Offset>
             </Anchor>
         </Anchors>
-        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+<!--        Interface\Tooltips\UI-Tooltip-Background-->
+<!--        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"-->
+        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background"
                   edgeFile="Interface\Tooltips\UI-Tooltip-Border1"
                   tile="true">
             <EdgeSize>
@@ -23,12 +25,12 @@
                 <AbsValue val="16"/>
             </TileSize>
             <BackgroundInsets>
-                <AbsInset left="4" right="4" top="4" bottom="4"/>
+                <AbsInset left="5" right="5" top="0" bottom="0"/>
             </BackgroundInsets>
         </Backdrop>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString name="$parentName" inherits="GameFontNormal" text="Er">
+                <FontString name="$parentName" inherits="GameFontNormal" text="[Name]">
                     <Anchors>
                         <Anchor point="LEFT">
                             <Offset>
@@ -46,7 +48,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentVotes" inherits="GameFontNormal" text="0">
+                <FontString name="$parentVotes" inherits="GameFontNormal" text="[0]">
                     <Anchors>
                         <Anchor point="RIGHT">
                             <Offset>
@@ -59,19 +61,27 @@
         </Layers>
         <Frames>
 
-            <Button name="$parentVoteButton" inherits="UIPanelButtonTemplate" text="vote">
+            <Button name="$parentVoteButton" inherits="UIPanelButtonTemplate" text="VOTE">
+                <NormalTexture inherits=""/>
+                <PushedTexture inherits=""/>
+                <DisabledTexture inherits=""/>
+                <HighlightTexture inherits=""/>
+                <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background"  tile="true">
+                    <Color r="0" g="0.88" b="0.06" a="1" />
+                </Backdrop>
                 <Size>
-                    <AbsDimension x="51" y="21"/>
+                    <AbsDimension x="60" y="21"/>
                 </Size>
                 <Anchors>
                     <Anchor point="RIGHT">
                         <Offset>
-                            <AbsDimension x="-45" y="0"/>
+                            <AbsDimension x="-35" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnClick>
+                        PlayerVoteButton_OnClick(this:GetID());
                     </OnClick>
 
                 </Scripts>
@@ -83,11 +93,15 @@
         </Scripts>
     </Frame>
 
-
-    <Frame name="LootLCWindow" hidden="false" toplevel="true" parent="UIParent" movable="true" enableMouse="true">
+    <Frame name="LootLCWindow" hidden="true" toplevel="true"
+           parent="UIParent" movable="true" enableMouse="true" resizable="true">
         <Size>
-            <AbsDimension x="400" y="500"/>
+            <AbsDimension x="400" y="200"/>
         </Size>
+        <ResizeBounds>
+            <minResize x="400" y="200"/>
+            <maxResize x="400" y="600"/>
+        </ResizeBounds>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -118,11 +132,13 @@
         </Layers>
         <Frames>
 
-<!--            <Button name="testb" inherits="PlayerWantsFrameTemplate" text="playerfraeeee">-->
-<!--            </Button>-->
-
 
             <Button name="LCCloseButton" inherits="UIPanelButtonTemplate" text="x">
+                <NormalTexture inherits=""/>
+                <PushedTexture inherits=""/>
+                <DisabledTexture inherits=""/>
+                <HighlightTexture inherits=""/>
+                <NormalFont inherits="GameFontRed"/>
                 <Size>
                     <AbsDimension x="21" y="21"/>
                 </Size>
@@ -135,20 +151,26 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                            ToggleMinimise();
+                            LootLCWindow:Hide();
                     </OnClick>
 
                 </Scripts>
             </Button>
 
-            <Button name="LCResetVoteButton" inherits="UIPanelButtonTemplate" text="Reset Vote">
+            <Button name="LCResetVoteButton" hidden="true" inherits="UIPanelButtonTemplate" text="Reset Vote">
+                <NormalTexture inherits=""/>
+                <PushedTexture inherits=""/>
+                <DisabledTexture inherits=""/>
+                <HighlightTexture inherits=""/>
+                <NormalFont inherits="GameFontRed"/>
                 <Size>
-                    <AbsDimension x="121" y="21"/>
+                    <AbsDimension x="80" y="21"/>
                 </Size>
+                <Color r="1" g="0" b="1" a="0.5" />
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="-6" y="-5"/>
+                            <AbsDimension x="3" y="-5"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -159,8 +181,6 @@
 
                 </Scripts>
             </Button>
-
-
 
             <Frame name="VotedItemFrame" hidden="false" toplevel="true">
                 <Size>
@@ -187,7 +207,7 @@
                 </Backdrop>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="VotedItemText" inherits="GameFontNormal" text="VotedItemText">
+                        <FontString name="VotedItemText" inherits="GameFontNormal" text="">
                             <Anchors>
                                 <Anchor point="CENTER">
                                     <Offset>
@@ -200,14 +220,18 @@
                 </Layers>
                 <Frames>
 
-                    <Button name="itemLinkButton" inherits="UIPanelButtonTemplate" text="itemLinkButton">
+                    <Button name="itemLinkButton" inherits="UIPanelButtonTemplate" text="-">
+                        <NormalTexture inherits=""/>
+                        <PushedTexture inherits=""/>
+                        <DisabledTexture inherits=""/>
+                        <HighlightTexture inherits=""/>
                         <Size>
-                            <AbsDimension x="100" y="21"/>
+                            <AbsDimension x="400" y="45"/>
                         </Size>
                         <Anchors>
                             <Anchor point="TOP">
                                 <Offset>
-                                    <AbsDimension x="0" y="-20"/>
+                                    <AbsDimension x="0" y="0"/>
                                 </Offset>
                             </Anchor>
                         </Anchors>
@@ -225,7 +249,6 @@
             </Frame>
 
 
-<!--            player wants frames here -->
 
             <Frame name="PeoplWhoVotedFrame" hidden="false" toplevel="true">
                 <Size>
@@ -252,7 +275,7 @@
                 </Backdrop>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="[maybe]People who voted: Er Smul Momo">
+                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="-">
                             <Anchors>
                                 <Anchor point="CENTER">
                                     <Offset>
@@ -269,6 +292,75 @@
                 <Scripts>
                 </Scripts>
             </Frame>
+
+            <Frame name="MLToWinnerButtonFrame" hidden="true" toplevel="true">
+                <Size>
+                    <AbsDimension x="400" y="40"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-35"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+                          tile="true">
+                    <EdgeSize>
+                        <AbsValue val="16"/>
+                    </EdgeSize>
+                    <TileSize>
+                        <AbsValue val="16"/>
+                    </TileSize>
+                    <BackgroundInsets>
+                        <AbsInset left="4" right="4" top="4" bottom="4"/>
+                    </BackgroundInsets>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="VotedItemText" inherits="GameFontNormal" text="">
+                            <Anchors>
+                                <Anchor point="CENTER">
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+
+                    <Button name="MLToWinnerButton" disabled="true" inherits="UIPanelButtonTemplate" text="Waiting for votes...">
+                        <NormalTexture inherits=""/>
+                        <PushedTexture inherits=""/>
+                        <DisabledTexture inherits=""/>
+                        <HighlightTexture inherits=""/>
+                        <NormalFont inherits="GameFontRed"/>
+                        <Size>
+                            <AbsDimension x="400" y="35"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="TOP">
+                                <Offset>
+                                    <AbsDimension x="0" y="-3"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                    assignBWLLoot()
+                            </OnClick>
+
+                        </Scripts>
+                    </Button>
+
+                </Frames>
+
+                <Scripts>
+                </Scripts>
+            </Frame>
+
 
             <Frame name="VotingOpenTimerFrame" hidden="false" toplevel="true">
                 <Size>
@@ -295,7 +387,7 @@
                 </Backdrop>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="VotingOpenTimerText" inherits="GameFontNormal" text="Please vote (2/11) - (28s)">
+                        <FontString name="VotingOpenTimerText" inherits="GameFontNormal" text="-">
                             <Anchors>
                                 <Anchor point="CENTER">
                                     <Offset>
@@ -313,8 +405,32 @@
                 </Scripts>
             </Frame>
 
+            <Button name="LCResizeButton">
+                <NormalTexture file="Interface\AddOns\LootRes\ResizeGrip"/>
+                <HighlightTexture file="Interface\AddOns\LootRes\ResizeGrip" alphaMode="ADD"/>
+                <Size>
+                <AbsDimension x="16" y="16"/>
+            </Size>
+            <Anchors>
+                <Anchor point="BOTTOMRIGHT">
+                    <Offset>
+                        <AbsDimension x="0" y="0"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+            <Scripts>
+                <OnMouseDown>
+                        LootLCWindow:StartSizing("BOTTOMRIGHT")
+                        LootLCWindow:SetUserPlaced(true)
+                </OnMouseDown>
+                <OnMouseUp>
+                        LootLCWindow:StopMovingOrSizing()
+                </OnMouseUp>
+                <OnClick>
+                </OnClick>
 
-
+            </Scripts>
+        </Button>
 
 
         </Frames>
