@@ -19,7 +19,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage("|cff69ccf0[LC] |cffffffff" .. a)
 end
 
-local addonVer = "1.1.0"
+local addonVer = "1.1.1"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -109,9 +109,9 @@ LootLCTooltip:RegisterEvent("CHAT_MSG_RAID")
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID_LEADER")
 comms:RegisterEvent("CHAT_MSG_ADDON")
 
-local secondsToRoll = 10
+local secondsToLink = 10
 local T = 1 --start
-local C = secondsToRoll --count to
+local C = secondsToLink --count to
 
 local timerChannel = "RAID_WARNING"
 local lcItem = ""
@@ -215,19 +215,37 @@ end)
 
 function LootLC:CheckLinks(message, author)
     if (not string.find(message, 'LC:', 1)) then
-        if (string.find(message, "[", 1, true)) then
+        if (string.find(message, "Hitem", 1, true)) then
             -- item
-            local exists = false
-            for name, votes in next, LootLC.votes do
-                if (name == author) then
-                    exists = true
+            local ex = string.split(message, "|")
+            local iColor = ""
+            if (string.find(ex[2], "c", 1) and string.sub(ex[2], 1, 1) == "c") then
+                iColor = ex[2]
+            end
+            local iHitem = ""
+            if (string.find(ex[3], "Hitem")) then
+                iHitem = ex[3]
+            end
+            local iName = ""
+            if (string.sub(ex[4], 1, 2) == "h[") then
+                iName = string.sub(ex[4], 2, string.len(ex[4]))
+            end
+            if (iColor ~= "" and iHitem ~= "" and iName ~= "") then
+                --found item
+
+                local exists = false
+                for name, votes in next, LootLC.votes do
+                    if (name == author) then
+                        exists = true
+                    end
+                end
+
+                if (not exists) then
+                    LootLC.votes[author] = 0
+                    LootLC.currentItem[author] = iColor .. "=" .. iHitem .. "=" .. iName
                 end
             end
 
-            if (not exists) then
-                LootLC.votes[author] = 0
-                LootLC.currentItem[author] = message
-            end
         else
             -- random shit chat in raid
         end
@@ -272,14 +290,14 @@ end)
 
 linkTimer:SetScript("OnUpdate", function()
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
-        if (T ~= secondsToRoll + 1) then
+        if (T ~= secondsToLink + 1) then
             SendChatMessage("LC: " .. (C - T + 1) .. "", "RAID")
         end
         linkTimer:Hide()
         if (T < C + 1) then
             T = T + 1
             linkTimer:Show()
-        elseif (T == secondsToRoll + 1) then
+        elseif (T == secondsToLink + 1) then
             SendChatMessage("LC: Closed", timerChannel)
             linkTimer:Hide()
             T = 1
@@ -386,9 +404,9 @@ function BWLLoot()
         linkTimer:Hide()
 
         T = 1 --start
-        C = secondsToRoll --count to / to link
+        C = secondsToLink --count to / to link
 
-        SendChatMessage(" " .. GameTooltip.itemLink .. " LINK (" .. secondsToRoll .. " Seconds)", timerChannel);
+        SendChatMessage(" " .. GameTooltip.itemLink .. " LINK (" .. secondsToLink .. " Seconds)", timerChannel);
         getglobal("itemLinkButton"):SetText(GameTooltip.itemLink)
         itemLinkButton:SetScript("OnClick", function(self)
             SetItemRef(itemLink)
@@ -434,16 +452,27 @@ function LootLC:AddPlayers()
 
         LootLC.playerFrames[i]:SetPoint("TOP", getglobal("VotedItemFrame"), "TOP", 0, -5 - (40 * i))
 
-        --        print("setting name " .. name .. " for  frame " .. i)
         getglobal("PlayerWantsFrame" .. i .. "Name"):SetText(name);
         if (LootLC.currentItem[name]) then
             currentItems = currentItems .. LootLC.currentItem[name] .. "~"
-            getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[name], 0, 70));
+
+            local ll = LootLC.currentItem[name]
+            local iItem = string.split(ll, "=")
+            --'|cff1eff00|Hitem:3577:0:0:0:0:0:0:276308480|h[Gold Bar]|h|r'
+            local reformatedItem = "|" .. iItem[1] .. "|" .. iItem[2] .. "|h" .. iItem[3] .. "|h|r"
+
+            getglobal("PlayerWantsFrame" .. i .. "Item"):SetText("");
+
+            getglobal("PlayerWantsFrame" .. i .. "ItemLinkButton"):SetText(reformatedItem);
+            getglobal("PlayerWantsFrame" .. i .. "ItemLinkButton"):SetScript("OnClick", function(self)
+                --item:3577:0:0:0:0:0:0:276308480
+                SetItemRef(string.sub(iItem[2], 2, string.len(iItem[2])))
+            end)
         else
-            --            print("item not found yet")
             if (LootLC.currentItem[i]) then
-                --                print("guessing item : " .. LootLC.currentItem[i])
-                getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[i], 0, 70));
+                local ll = LootLC.currentItem[i]
+                print(ll)
+                getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[i], 0, 170));
             end
         end
         getglobal("PlayerWantsFrame" .. i .. "Votes"):SetText(0);
@@ -475,7 +504,6 @@ function LootLC:AddPlayers()
     if (IsRaidLeader() and names ~= "") then
         names = trim(names)
         SendAddonMessage("TWLC", "item~" .. lcItem, "RAID")
-        --        print("current items to send : " .. currentItems)
         SendAddonMessage("TWLC", "currentItems:" .. currentItems, "RAID")
         SendAddonMessage("TWLC", "players:" .. names, "RAID")
     end
