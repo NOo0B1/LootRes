@@ -42,8 +42,8 @@ function resetRoster()
         ["Er"] = false,
         ["Chlothar"] = false,
         ["Aurelian"] = false,
-        ["Cosmort"] = false, --dev
-        ["Xerrbear"] = false --dev
+--        ["Cosmort"] = false, --dev
+--        ["Xerrbear"] = false --dev
     }
 end
 
@@ -173,11 +173,6 @@ LootLC:SetScript("OnUpdate", function()
 
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
         if (this.timePassed >= this.timeToVote) then
-            if (LootLC.myVote == "") then
-                getglobal("LCCloseButton"):Disable()
-            else
-                getglobal("LCCloseButton"):Enable()
-            end
 
             local voters = ""
             local i = 0
@@ -190,13 +185,6 @@ LootLC:SetScript("OnUpdate", function()
             end
             getglobal('PeopleWhoVotedNames'):SetText(voters)
         else
-
-            if (LootLC.myVote == "") then
-                getglobal("LCCloseButton"):Disable()
-            else
-                getglobal("LCCloseButton"):Enable()
-            end
-
             this.timePassed = this.timePassed + 1
             this.startTime = math.floor(GetTime())
             LootLC.timeLeft = this.timeToVote - this.timePassed
@@ -317,6 +305,11 @@ linkTimer:SetScript("OnUpdate", function()
     end
 end)
 
+function hideLCWindow()
+    print("Window closed. Type |cfffff569/lc show |cffffffffto reopen it.")
+    LootLCWindow:Hide();
+end
+
 function assignBWLLoot()
 
     if (LootLC.itemName == "") then
@@ -333,7 +326,7 @@ function assignBWLLoot()
     local winnerName = ""
     local maxVotes = -1
     for name, votes in next, LootLC.votes do
---        print(name .. " votes: " .. votes)
+        --        print(name .. " votes: " .. votes)
         if (votes > maxVotes) then
             maxVotes = votes
             winnerName = name
@@ -351,7 +344,7 @@ function assignBWLLoot()
     if (RaiderWinerIndex == 0) then
         print("Something went wrong, winner name is not on loot list.")
     else
---        print("should give " .. LootLC.itemSlotID .. "(" .. LootLC.itemName .. ") to raider index : " .. RaiderWinerIndex .. " " .. GetMasterLootCandidate(RaiderWinerIndex))
+        --        print("should give " .. LootLC.itemSlotID .. "(" .. LootLC.itemName .. ") to raider index : " .. RaiderWinerIndex .. " " .. GetMasterLootCandidate(RaiderWinerIndex))
         GiveMasterLoot(LootLC.itemSlotID, RaiderWinerIndex);
         LootLC.itemName = ""
         LootLC.itemSlotID = 0
@@ -432,7 +425,7 @@ function LootLC:AddPlayers()
     for name, votes in next, LootLC.votes do
         i = i + 1
         if (not LootLC.playerFrames[i]) then
---            print(" creating frame " .. i .. " for " .. name)
+            --            print(" creating frame " .. i .. " for " .. name)
             LootLC.playerFrames[i] = CreateFrame("Frame", "PlayerWantsFrame" .. i, getglobal("LootLCWindow"), "PlayerWantsFrameTemplate")
         else
             --            print(" frame " .. i .. " still exists")
@@ -447,9 +440,9 @@ function LootLC:AddPlayers()
             currentItems = currentItems .. LootLC.currentItem[name] .. "~"
             getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[name], 0, 70));
         else
---            print("item not found yet")
+            --            print("item not found yet")
             if (LootLC.currentItem[i]) then
---                print("guessing item : " .. LootLC.currentItem[i])
+                --                print("guessing item : " .. LootLC.currentItem[i])
                 getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[i], 0, 70));
             end
         end
@@ -536,14 +529,12 @@ function LootLC:Vote(voteName)
             end
         else
             -- lock all others
-            getglobal("LCCloseButton"):Enable()
             getglobal("PlayerWantsFrame" .. i .. "VoteButton"):Disable()
         end
     end
 
     if (LootLC.myVote == "") then
         -- unlockall
-        getglobal("LCCloseButton"):Disable()
         local j = 0
         for name, votes in next, LootLC.votes do
             j = j + 1
@@ -624,10 +615,10 @@ function LootLC:UpdatePleaseVote()
 
     for i = 0, GetNumRaidMembers() do
         if (GetRaidRosterInfo(i)) then
-            local n, r = GetRaidRosterInfo(i);
+            local n, r, s, l, c, f, zone = GetRaidRosterInfo(i);
             if (r == 1 or r == 2) then
                 for name, v in next, LCRoster do
-                    if (name == n) then
+                    if (name == n and zone ~= "Offline") then
                         onlineRoster = onlineRoster + 1
                         break
                     end
@@ -652,7 +643,7 @@ function LootLC:ResetVars()
         if (GetRaidRosterInfo(i)) then
             local n, r = GetRaidRosterInfo(i);
             if (n == UnitName('player') and (r == 1 or r == 2)) then
-                DEFAULT_CHAT_FRAME:AddMessage("LC: Voting reset.")
+                print("Voting reset.")
             end
         end
     end
