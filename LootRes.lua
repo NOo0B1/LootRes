@@ -310,14 +310,70 @@ function PrintFromTooltip()
 
         if (reservedNumber > 0) then
             -- RESERVED
+
             for playerName, item in next, LootRes:lootres_reserves() do
                 if (string.lower(itemName) == string.lower(item)) then
                     reservedNames = reservedNames .. " " .. playerName;
                 end
             end
-            SendChatMessage(reservedNames .. " ROLL FOR " .. GameTooltip.itemLink .. " " .. secondsToRoll .. " Seconds", timerChannel);
-            rollTimer:Show()
-            rollsOpen = true
+
+            if (reservedNumber == 1) then
+                -- if only one person reserved it
+                -- check if he's in raid and online
+                local isInRaid = false
+                local isOnline = false
+                for i = 0, GetNumRaidMembers() do
+                    if (GetRaidRosterInfo(i)) then
+                        local n, r, s, l, c, f, z = GetRaidRosterInfo(i);
+                        if (n == trim(reservedNames)) then
+                            isInRaid = true
+                            isOnline = z ~= "Offline"
+                        end
+                    end
+                end
+                if (isInRaid) then
+                    if (isOnline) then
+                        SendChatMessage(trim(reservedNames) .. " (in raid) is the only one who reserved " .. GameTooltip.itemLink .. " ", timerChannel);
+                    else
+                        SendChatMessage(trim(reservedNames) .. " (offline) reserved " .. GameTooltip.itemLink .. ". Anyone can roll !", timerChannel);
+                        rollTimer:Show()
+                        rollsOpen = true
+                    end
+                else
+                    SendChatMessage(trim(reservedNames) .. " (not in raid) is the only one who reserved " .. GameTooltip.itemLink .. ". Anyone can roll ! " .. secondsToRoll .. " Seconds", timerChannel);
+                    rollTimer:Show()
+                    rollsOpen = true
+                end
+            else
+                --if more than one reserved it, check who's online and offline, and inraid
+                local peopleWhoReserved = {}
+                for playerName, item in next, LootRes:lootres_reserves() do
+                    if (string.lower(itemName) == string.lower(item)) then
+                        peopleWhoReserved[playerName] = {
+                            online = false,
+                            inraid = false
+                        };
+                    end
+                end
+
+                for i = 0, GetNumRaidMembers() do
+                    if (GetRaidRosterInfo(i)) then
+                        local n, r, s, l, c, f, z = GetRaidRosterInfo(i);
+
+                        for player, data in next, peopleWhoReserved do
+                            if (player == n) then
+                                peopleWhoReserved[player]['inraid'] = true
+                                if (z ~= "Offline") then peopleWhoReserved[player]['online'] = true end
+                            end
+                        end
+                    end
+                end
+
+
+                SendChatMessage(reservedNames .. " ROLL FOR " .. GameTooltip.itemLink .. " " .. secondsToRoll .. " Seconds", timerChannel);
+                rollTimer:Show()
+                rollsOpen = true
+            end
 
         else
             -- NOT RESERVED
@@ -340,42 +396,17 @@ function LootRes:CheckReserves()
     for n, i in next, LootRes:lootres_reserves() do
         print(" checking " .. i)
         local itemName = GetItemInfo(i)
---        if (i) then
-            print(itemName)
---        else
---            print(i .. " has errors")
---        end
+        --        if (i) then
+        print(itemName)
+        --        else
+        --            print(i .. " has errors")
+        --        end
     end
 end
 
 function LootRes:lootres_reserves()
     return {
-        ["Tyrelys"] = "Band of Accuria",
-        ["Laughadin"] = "Judgement Legplates",
-        ["Momo"] = "Choker of the Fire Lord",
-        ["Chlo"] = "Cloak of the Shrouded Mists",
-        ["Justherczeg"] = "Choker of the Fire Lord",
-        ["Aurrius"] = "Robe of Volatile Power",
-        ["Smersh"] = "Nightslayer Cover",
-        ["Halyeth"] = "Quick Strike Ring",
-        ["Er"] = "Cauterizing Band",
-        ["Faralynn"] = "Wild Growth Spaulders",
-        ["Ruari"] = "Cloak of the Shrouded Mists",
-        ["Leyvar"] = "Onslaught Girdle",
-        ["Edward"] = "Felheart Horns",
-        ["Wither"] = "Giantstalker's Epaulets",
-        ["Chlothar"] = "Quick Strike Ring",
-        ["Faustus"] = "Azuresong Mageblade",
-        ["Smultron"] = "Band of Accuria",
-        ["Motorboat"] = "Choker of the Fire Lord",
-        ["Raymundo"] = "Giantstalker's Breastplate",
-        ["Vaedath"] = "Breastplate of Might",
-        ["Astrld"] = "Band of Accuria",
-        ["Leoni"] = "Striker's Mark",
-        ["Camil"] = "Ring of Spell Power",
-        ["Karaja"] = "Felheart Gloves",
-        ["Furryslayer"] = "Choker of the Fire Lord",
-        ["Adrasteia"] = "Essence of the Pure Flame",
-        ["Dispatch"] = "Choker of Enlightenment",
+        ["Er"] = "Tea with Sugar",
+        ["Ilmane"] = "Sacred Candle",
     }
 end
