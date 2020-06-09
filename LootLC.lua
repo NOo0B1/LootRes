@@ -59,6 +59,15 @@ local classColors = {
     ["priest"] = { r = 1, g = 1, b = 1, c = "|cffffffff" },
     ["warlock"] = { r = 0.58, g = 0.51, b = 0.79, c = "|cff9482c9" },
     ["paladin"] = { r = 0.96, g = 0.55, b = 0.73, c = "|cfff58cba" },
+
+    ["krieger"] = { r = 0.78, g = 0.61, b = 0.43, c = "|cffc79c6e" },
+    ["magier"] = { r = 0.41, g = 0.8, b = 0.94, c = "|cff69ccf0" },
+    ["schurke"] = { r = 1, g = 0.96, b = 0.41, c = "|cfffff569" },
+    ["druide"] = { r = 1, g = 0.49, b = 0.04, c = "|cffff7d0a" },
+    ["jäger"] = { r = 0.67, g = 0.83, b = 0.45, c = "|cffabd473" },
+    ["schamane"] = { r = 0.14, g = 0.35, b = 1.0, c = "|cff0070de" },
+    ["priester"] = { r = 1, g = 1, b = 1, c = "|cffffffff" },
+    ["hexenmeister"] = { r = 0.58, g = 0.51, b = 0.79, c = "|cff9482c9" },
 }
 
 function getColor(p)
@@ -443,10 +452,7 @@ function LootLC:AddPlayers()
     for name, votes in next, LootLC.votes do
         i = i + 1
         if (not LootLC.playerFrames[i]) then
-            --            print(" creating frame " .. i .. " for " .. name)
             LootLC.playerFrames[i] = CreateFrame("Frame", "PlayerWantsFrame" .. i, getglobal("LootLCWindow"), "PlayerWantsFrameTemplate")
-        else
-            --            print(" frame " .. i .. " still exists")
         end
 
 
@@ -471,8 +477,16 @@ function LootLC:AddPlayers()
         else
             if (LootLC.currentItem[i]) then
                 local ll = LootLC.currentItem[i]
-                print(ll)
-                getglobal("PlayerWantsFrame" .. i .. "Item"):SetText(string.sub(LootLC.currentItem[i], 0, 170));
+                local iItem = string.split(ll, "=")
+                --'|cff1eff00|Hitem:3577:0:0:0:0:0:0:276308480|h[Gold Bar]|h|r'
+                local reformatedItem = "|" .. iItem[1] .. "|" .. iItem[2] .. "|h" .. iItem[3] .. "|h|r"
+
+                getglobal("PlayerWantsFrame" .. i .. "Item"):SetText("");
+                getglobal("PlayerWantsFrame" .. i .. "ItemLinkButton"):SetText(reformatedItem);
+                getglobal("PlayerWantsFrame" .. i .. "ItemLinkButton"):SetScript("OnClick", function(self)
+                    --item:3577:0:0:0:0:0:0:276308480
+                    SetItemRef(string.sub(iItem[2], 2, string.len(iItem[2])))
+                end)
             end
         end
         getglobal("PlayerWantsFrame" .. i .. "Votes"):SetText(0);
