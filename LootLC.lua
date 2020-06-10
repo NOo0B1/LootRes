@@ -19,7 +19,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage("|cff69ccf0[LC] |cffffffff" .. a)
 end
 
-local addonVer = "1.1.2"
+local addonVer = "1.1.3"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -28,6 +28,8 @@ end)
 
 
 local LCRoster = {};
+
+LootLC.voted = {}
 
 function resetRoster()
     LCRoster = {
@@ -43,8 +45,11 @@ function resetRoster()
         ["Chlothar"] = false,
         ["Aurelian"] = false,
         --        ["Cosmort"] = false, --dev
-        --        ["Xerrbear"] = false --dev
+        ["Xerrbear"] = false --dev
     }
+    for name, v in LCRoster do
+        LootLC.voted[name] = 0
+    end
 end
 
 resetRoster()
@@ -59,7 +64,6 @@ local classColors = {
     ["priest"] = { r = 1, g = 1, b = 1, c = "|cffffffff" },
     ["warlock"] = { r = 0.58, g = 0.51, b = 0.79, c = "|cff9482c9" },
     ["paladin"] = { r = 0.96, g = 0.55, b = 0.73, c = "|cfff58cba" },
-
     ["krieger"] = { r = 0.78, g = 0.61, b = 0.43, c = "|cffc79c6e" },
     ["magier"] = { r = 0.41, g = 0.8, b = 0.94, c = "|cff69ccf0" },
     ["schurke"] = { r = 1, g = 0.96, b = 0.41, c = "|cfffff569" },
@@ -110,7 +114,7 @@ end
 LootLC:SetScript("OnShow", function()
     this.startTime = math.floor(GetTime());
     this.timePassed = 0
-    this.timeToVote = 30
+    this.timeToVote = 5
 end)
 
 LootLCTooltip:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
@@ -118,7 +122,7 @@ LootLCTooltip:RegisterEvent("CHAT_MSG_RAID")
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID_LEADER")
 comms:RegisterEvent("CHAT_MSG_ADDON")
 
-local secondsToLink = 10
+local secondsToLink = 5
 local T = 1 --start
 local C = secondsToLink --count to
 
@@ -137,6 +141,7 @@ LootLC.playerFrames = {}
 LootLC.votes = {}
 LootLC.currentItem = {}
 LootLC.myVote = ""
+LootLC.myVotes = {}
 LootLC.itemName = ""
 LootLC.itemLink = ""
 LootLC.itemSlotID = 0
@@ -184,17 +189,7 @@ LootLC:SetScript("OnUpdate", function()
 
     if (math.floor(GetTime()) == math.floor(this.startTime) + 1) then
         if (this.timePassed >= this.timeToVote) then
-
-            local voters = ""
-            local i = 0
-            for n, k in next, PeoplWhoVotedFrame.voters do
-                i = i + 1
-                if (k) then
-                    voters = voters .. getColor(n) .. n .. " "
-                end
-                if i > 4 then voters = voters .. "\n" end
-            end
-            getglobal('PeopleWhoVotedNames'):SetText(voters)
+            LootLC:AddPeopleWhoVoted()
         else
             this.timePassed = this.timePassed + 1
             this.startTime = math.floor(GetTime())
@@ -203,6 +198,20 @@ LootLC:SetScript("OnUpdate", function()
         end
     end
 end)
+
+function LootLC:AddPeopleWhoVoted()
+    local voters = ""
+    local i = 0
+    for name, t in next, LootLC.voted do
+        if (LootLC.voted[name] > 0) then
+            i = i + 1
+            voters = voters .. getColor(name) .. name .. " "
+            if i > 5 then voters = voters .. "\n" i = 0 end
+        end
+    end
+    --voters = "Smultron Ilmane Babagiega Faralynn Tyrelys Momo\nTrepp Chlo  Er Chlothar Aurelian"
+    getglobal('PeopleWhoVotedNames'):SetText(voters)
+end
 
 LootLCTooltip:SetScript("OnEvent", function()
 
@@ -502,13 +511,19 @@ function LootLC:AddPlayers()
 
         local cc = classColors["priest"]
 
-        for j = 0, GetNumRaidMembers() do
+        local j
 
-            local guildName, guildRankName, guildRankIndex = GetGuildInfo('raid' .. j);
+        for j = 1, GetNumRaidMembers() do
+
+            local guildName = GetGuildInfo('raid' .. j);
             if (guildName) then
                 getglobal("PlayerWantsFrame" .. i .. "Guild"):SetText(guildName)
+            else
+                getglobal("PlayerWantsFrame" .. i .. "Guild"):SetText("")
             end
+        end
 
+        for j = 0, GetNumRaidMembers() do
 
             if (GetRaidRosterInfo(j)) then
                 local n, r, s, l, c = GetRaidRosterInfo(j);
@@ -573,31 +588,47 @@ function LootLC:Vote(voteName)
     for name, votes in next, LootLC.votes do
         i = i + 1
         if (name == voteName) then
-            if (LootLC.myVote == "") then
+            if (not LootLC.myVotes[name] or LootLC.myVotes[name] == "-") then
                 LootLC.votes[name] = LootLC.votes[name] + 1
-                LootLC.myVote = voteName
+                LootLC.myVotes[name] = "+"
                 SendAddonMessage("TWLC", "myVote:+:" .. voteName, "RAID")
                 getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetText("UNVOTE")
+
+                if (LootLC.voted[UnitName('player')] ~= nil) then
+                    LootLC.voted[UnitName('player')] = LootLC.voted[UnitName('player')] + 1
+                else
+                    LootLC.voted[UnitName('player')] = 1
+                end
             else
                 LootLC.votes[name] = LootLC.votes[name] - 1
                 SendAddonMessage("TWLC", "myVote:-:" .. voteName, "RAID")
-                LootLC.myVote = ""
+                LootLC.myVotes[name] = "-"
                 getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetText("VOTE")
+
+                if (LootLC.voted[UnitName('player')] ~= nil) then
+                    LootLC.voted[UnitName('player')] = LootLC.voted[UnitName('player')] - 1
+                else
+                    print('nu ar trebui sa ajunga aici')
+                end
             end
         else
             -- lock all others
-            getglobal("PlayerWantsFrame" .. i .. "VoteButton"):Disable()
+            --            getglobal("PlayerWantsFrame" .. i .. "VoteButton"):Disable()
         end
     end
 
-    if (LootLC.myVote == "") then
-        -- unlockall
-        local j = 0
-        for name, votes in next, LootLC.votes do
-            j = j + 1
-            getglobal("PlayerWantsFrame" .. j .. "VoteButton"):Enable()
-            getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetText("VOTE")
-        end
+    --    if (LootLC.myVote == "") then
+    --        -- unlockall
+    --        local j = 0
+    --        for name, votes in next, LootLC.votes do
+    --            j = j + 1
+    --            getglobal("PlayerWantsFrame" .. j .. "VoteButton"):Enable()
+    --            getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetText("VOTE")
+    --        end
+    --    end
+
+    if (LootLC.timeLeft == 0) then
+        LootLC:AddPeopleWhoVoted()
     end
 
     LootLC:UpdateView()
@@ -614,7 +645,7 @@ function LootLC:UpdateView()
 
     for name, votes in next, LootLC.votes do
         i = i + 1
-        LootLC.totalVotes = LootLC.totalVotes + votes
+        --        LootLC.totalVotes = LootLC.totalVotes + votes
         getglobal("PlayerWantsFrame" .. i .. "Votes"):SetText(votes)
 
         -- tie check
@@ -665,7 +696,7 @@ function LootLC:UpdatePleaseVote()
     if (LootLC.myVote == "") then
         text = "Please vote"
     else
-        text = "You voted for " .. LootLC.myVote;
+        text = "You voted" -- for " .. LootLC.myVote;
     end
 
     if (LootLC.timeLeft > 0) then
@@ -687,6 +718,14 @@ function LootLC:UpdatePleaseVote()
                     end
                 end
             end
+        end
+    end
+
+    LootLC.totalVotes = 0
+
+    for name, t in next, LootLC.voted do
+        if (LootLC.voted[name]) > 0 then
+            LootLC.totalVotes = LootLC.totalVotes + 1
         end
     end
 
@@ -720,6 +759,7 @@ function LootLC:ResetVars()
     LootLC.votes = {}
     LootLC.currentItem = {}
     LootLC.myVote = ""
+    LootLC.myVotes = {}
     LootLC.totalVotes = 0
     LootLC.timeLeft = 0
 
@@ -735,7 +775,13 @@ function LootLC:ResetVars()
     getglobal("MLToWinnerButton"):Disable()
     getglobal("MLToWinnerButton"):SetText("Waiting for votes...")
 
+    for name, t in next, LootLC.voted do
+        LootLC.voted[name] = 0
+    end
+
     LootLC:UpdatePleaseVote()
+
+    LootLC:Hide()
 end
 
 -- comms
@@ -755,6 +801,7 @@ comms:SetScript("OnEvent", function()
             end
 
             if (arg1 == "TWLC" and arg4 ~= UnitName("player")) then
+                -- todo limit inc mess from assist/rl only
                 comms:recSync(arg1, arg2, arg3, arg4)
             end
             -- vote counter
@@ -766,12 +813,6 @@ comms:SetScript("OnEvent", function()
                         PeoplWhoVotedFrame.voters[arg4] = true
                     else
                         PeoplWhoVotedFrame.voters[arg4] = false
-                    end
-                    local numberOfVoters = 0
-                    for n, k in next, PeoplWhoVotedFrame.voters do
-                        if (k) then
-                            numberOfVoters = numberOfVoters + 1
-                        end
                     end
                     LootLC:UpdatePleaseVote()
                 end
@@ -860,10 +901,24 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             if (name == vote[3]) then
                 if (vote[2] == '+') then
                     LootLC.votes[name] = LootLC.votes[name] + 1
+                    if (LootLC.voted[s] ~= nil) then
+                        LootLC.voted[s] = LootLC.voted[s] + 1
+                    else
+                        LootLC.voted[s] = 1
+                    end
                 else
                     LootLC.votes[name] = LootLC.votes[name] - 1
+                    if (LootLC.voted[s] ~= nil) then
+                        LootLC.voted[s] = LootLC.voted[s] - 1
+                    else
+                        print('nu ar trebui sa ajunga aici')
+                    end
                 end
             end
+        end
+
+        if (LootLC.timeLeft == 0) then
+            LootLC:AddPeopleWhoVoted()
         end
 
         LootLC:UpdateView()
