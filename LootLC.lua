@@ -19,7 +19,7 @@ function print(a)
     DEFAULT_CHAT_FRAME:AddMessage("|cff69ccf0[LC] |cffffffff" .. a)
 end
 
-local addonVer = "1.1.1"
+local addonVer = "1.1.2"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -138,8 +138,10 @@ LootLC.votes = {}
 LootLC.currentItem = {}
 LootLC.myVote = ""
 LootLC.itemName = ""
+LootLC.itemLink = ""
 LootLC.itemSlotID = 0
 LootLC.voteTie = false
+LootLC.voteTieRollers = ""
 
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
@@ -339,6 +341,11 @@ end
 
 function assignBWLLoot()
 
+    if (LootLC.voteTie) then
+        SendChatMessage(LootLC.voteTieRollers .. " ROLL for " .. LootLC.itemLink, timerChannel);
+        return
+    end
+
     if (LootLC.itemName == "") then
         print("Error: no itemname set.")
         return
@@ -399,6 +406,7 @@ function BWLLoot()
         local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
         local r, g, b = GetItemQualityColor(itemRarity)
 
+        LootLC.itemLink = GameTooltip.itemLink
         LootLC.itemName = itemName
         for id = 0, GetNumLootItems() do
             if GetLootSlotInfo(id) then
@@ -494,9 +502,16 @@ function LootLC:AddPlayers()
 
         local cc = classColors["priest"]
 
-        for i = 0, GetNumRaidMembers() do
-            if (GetRaidRosterInfo(i)) then
-                local n, r, s, l, c = GetRaidRosterInfo(i);
+        for j = 0, GetNumRaidMembers() do
+
+            local guildName, guildRankName, guildRankIndex = GetGuildInfo('raid' .. j);
+            if (guildName) then
+                getglobal("PlayerWantsFrame" .. i .. "Guild"):SetText(guildName)
+            end
+
+
+            if (GetRaidRosterInfo(j)) then
+                local n, r, s, l, c = GetRaidRosterInfo(j);
                 if (n == name) then
                     if classColors[string.lower(c)] then
                         cc = classColors[string.lower(c)]
@@ -592,6 +607,8 @@ function LootLC:UpdateView()
     local i = 0
     local maxVotes = 0
     local winner = ""
+    local winners = ""
+    LootLC.voteTieRollers = ""
     LootLC.voteTie = false
     LootLC.totalVotes = 0
 
@@ -613,6 +630,9 @@ function LootLC:UpdateView()
             if (name ~= winner and votes == maxVotes) then
                 LootLC.voteTie = true
             end
+            if (votes == maxVotes) then
+                winners = winners .. name .. " "
+            end
         end
     end
 
@@ -620,8 +640,9 @@ function LootLC:UpdateView()
     getglobal("MLToWinnerButton"):SetText("Waiting for votes...")
 
     if (LootLC.voteTie) then
-        getglobal("MLToWinnerButton"):Disable()
-        getglobal("MLToWinnerButton"):SetText("Can't ML, there's a TIE")
+        LootLC.voteTieRollers = winners
+        getglobal("MLToWinnerButton"):Enable()
+        getglobal("MLToWinnerButton"):SetText(maxVotes .. " votes TIE ! Roll " .. winners .. "?")
     else
         if (winner ~= "") then
             getglobal("MLToWinnerButton"):Enable()
@@ -703,6 +724,7 @@ function LootLC:ResetVars()
     LootLC.timeLeft = 0
 
     LootLC.itemName = ""
+    LootLC.itemLink = ""
     LootLC.itemSlotID = 0
 
     getglobal("PeopleWhoVotedNames"):SetText('Waiting for votes...')

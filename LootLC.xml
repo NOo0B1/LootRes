@@ -34,7 +34,16 @@
                     <Anchors>
                         <Anchor point="LEFT">
                             <Offset>
-                                <AbsDimension x="15" y="0"/>
+                                <AbsDimension x="15" y="5"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentGuild" inherits="GameFontNormalSmall" text="[Guild]">
+                    <Anchors>
+                        <Anchor point="LEFT">
+                            <Offset>
+                                <AbsDimension x="15" y="-10"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -98,7 +107,7 @@
                 <Anchors>
                     <Anchor point="RIGHT">
                         <Offset>
-                            <AbsDimension x="-100" y="0"/>
+                            <AbsDimension x="-100" y="6"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -352,7 +361,7 @@
                 </Layers>
                 <Frames>
 
-                    <Button name="MLToWinnerButton" disabled="true" inherits="UIPanelButtonTemplate"
+                    <Button name="MLToWinnerButton" inherits="UIPanelButtonTemplate"
                             text="Waiting for votes...">
                         <NormalTexture inherits=""/>
                         <PushedTexture inherits=""/>
