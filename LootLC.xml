@@ -70,7 +70,7 @@
         </Layers>
         <Frames>
 
-            <Button name="$parentVoteButton" inherits="UIPanelButtonTemplate" text="VOTE">
+            <Button name="$parentVoteButton" inherits="UIPanelButtonTemplate" text="">
                 <NormalTexture inherits=""/>
                 <PushedTexture inherits=""/>
                 <DisabledTexture inherits=""/>
@@ -88,6 +88,23 @@
                         </Offset>
                     </Anchor>
                 </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <Texture name="$parentCheck" file="Interface\Buttons\UI-CheckBox-Check" hidden="true">
+                            <Size>
+                                <AbsDimension x="16" y="16"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER">
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+
                 <Scripts>
                     <OnClick>
                             PlayerVoteButton_OnClick(this:GetID());
@@ -182,7 +199,7 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        hideLCWindow()
+                            hideLCWindow()
                     </OnClick>
 
                 </Scripts>
@@ -316,7 +333,8 @@
                         </FontString>
                     </Layer>
                     <Layer level="OVERLAY">
-                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="Smultron Ilmane Babagiega Faralynn\\nTyrelys Momo Trepp Chlo\nEr Chlothar Aurelian">
+                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal"
+                                    text="Smultron Ilmane Babagiega Faralynn\\nTyrelys Momo Trepp Chlo\nEr Chlothar Aurelian">
                             <Anchors>
                                 <Anchor point="TOP">
                                     <Offset>
@@ -368,6 +386,18 @@
                                 </Anchor>
                             </Anchors>
                         </FontString>
+                        <Texture name="LCMLIcon" file="Interface\GroupFrame\UI-Group-MasterLooter">
+                            <Size>
+                                <AbsDimension x="16" y="16"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset>
+                                        <AbsDimension x="10" y="-10"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </Texture>
                     </Layer>
                 </Layers>
                 <Frames>
