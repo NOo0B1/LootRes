@@ -75,7 +75,7 @@ local classColors = {
 }
 
 function getColor(p)
-    if (string.find(p, "*", 1)) then
+    if (string.find(p, "*", 1, true)) then
         p = string.sub(p, 2, string.len(p))
     end
     if p == "Smultron" then return classColors["warrior"].c end
@@ -119,10 +119,11 @@ end)
 
 LootLCTooltip:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID")
+LootLCTooltip:RegisterEvent("CHAT_MSG_SYSTEM") --rolls
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID_LEADER")
 comms:RegisterEvent("CHAT_MSG_ADDON")
 
-local secondsToLink = 5
+local secondsToLink = 10
 local T = 1 --start
 local C = secondsToLink --count to
 
@@ -147,6 +148,12 @@ LootLC.itemLink = ""
 LootLC.itemSlotID = 0
 LootLC.voteTie = false
 LootLC.voteTieRollers = ""
+
+LootLC.waitingForRolls = false
+LootLC.tieRollers = {}
+LootLC.rollWinner = ""
+LootLC.rollTie = false
+LootLC.rollTieWinners = ""
 
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
@@ -228,22 +235,85 @@ LootLCTooltip:SetScript("OnEvent", function()
                 getglobal('MLToWinnerButtonFrame'):Hide()
             end
         end
+        if (event == 'CHAT_MSG_SYSTEM') then
+            if (LootLC.waitingForRolls) then
+                CheckRolls(arg1)
+            end
+        end
     end
 
     local score, r, g, b = LootLCTooltip:ScanUnit("mouseover")
 end)
 
+function CheckRolls(arg)
+
+    if (string.find(arg, "rolls", 1, true) and string.find(arg, "-", 1, true)) then
+        local r = string.split(arg, " ")
+
+        local rlrs = string.split(LootLC.voteTieRollers, " ")
+        local shouldRoll = false
+        for k, n in next, rlrs do
+            if (r[1] == n) then
+                shouldRoll = true
+            end
+        end
+        if (shouldRoll) then
+            print('should have rolled')
+            -- double roll protection
+            if (LootLC.tieRollers[r[1]] > 0) then
+                print('double roll found, ignoring')
+            else
+                LootLC.tieRollers[r[1]] = tonumber(r[3])
+            end
+
+            -- detect max
+            LootLC.rollWinner = ""
+            local max = 0
+            for n, r in next, LootLC.tieRollers do
+                if (r > max) then
+                    max = r
+                    LootLC.rollWinner = n
+                end
+            end
+
+            -- detect ties again
+            LootLC.rollTie = false
+            LootLC.rollTieWinners = ""
+            if (max > 0) then
+                for n, r in next, LootLC.tieRollers do
+                    if (n ~= LootLC.rollWinner and r == max) then
+                        LootLC.rollTie = true
+                    end
+                    if (r == max) then
+                        LootLC.rollTieWinners = LootLC.rollTieWinners .. n .. " "
+                    end
+                end
+            end
+            if (LootLC.rollTie) then
+                LootLC.rollWinner = "" --because winnerS
+                print('tie detected : ' .. LootLC.rollTieWinners)
+                getglobal("MLToWinnerButton"):SetText("TIE Rolls (" .. max .. ") ! Roll again " .. LootLC.rollTieWinners .. "?")
+            else
+                getglobal("MLToWinnerButton"):SetText("Roll Winner : " .. LootLC.rollWinner .. " with a " .. max .. "!")
+            end
+
+        else
+            print('should not have rolled - ignoring roll')
+        end
+    end
+end
+
 function LootLC:CheckLinks(message, author)
-    if (not string.find(message, 'LC:', 1)) then
+    if (not string.find(message, 'LC:', 1, true)) then
         if (string.find(message, "Hitem", 1, true)) then
             -- item
             local ex = string.split(message, "|")
             local iColor = ""
-            if (string.find(ex[2], "c", 1) and string.sub(ex[2], 1, 1) == "c") then
+            if (string.find(ex[2], "c", 1, true) and string.sub(ex[2], 1, 1) == "c") then
                 iColor = ex[2]
             end
             local iHitem = ""
-            if (string.find(ex[3], "Hitem")) then
+            if (string.find(ex[3], "Hitem", 1, true)) then
                 iHitem = ex[3]
             end
             local iName = ""
@@ -351,7 +421,25 @@ end
 function assignBWLLoot()
 
     if (LootLC.voteTie) then
-        SendChatMessage(LootLC.voteTieRollers .. " ROLL for " .. LootLC.itemLink, timerChannel);
+        SendChatMessage(LootLC.voteTieRollers .. " ROLL for " .. LootLC.itemLink, timerChannel)
+        LootLC.waitingForRolls = true
+        local rlrs = string.split(LootLC.voteTieRollers, " ")
+        LootLC.tieRollers = {}
+        for k, n in next, rlrs do
+            LootLC.tieRollers[n] = 0
+        end
+        LootLC.voteTie = false -- not sure
+
+        return
+    end
+
+    if (LootLC.rollTie) then
+        local rlrs = string.split(LootLC.voteTieRollers, " ")
+        LootLC.tieRollers = {}
+        for k, n in next, rlrs do
+            LootLC.tieRollers[n] = 0
+        end
+        SendChatMessage(LootLC.rollTieWinners .. " ROLL again for " .. LootLC.itemLink, timerChannel)
         return
     end
 
@@ -365,7 +453,7 @@ function assignBWLLoot()
         return
     end
 
-    -- find winner
+    -- find winner from votes
     local winnerName = ""
     local maxVotes = -1
     for name, votes in next, LootLC.votes do
@@ -374,6 +462,11 @@ function assignBWLLoot()
             maxVotes = votes
             winnerName = name
         end
+    end
+
+    -- find winner from rolls
+    if (LootLC.rollWinner ~= "") then
+        winnerName = LootLC.rollWinner
     end
 
     local RaiderWinerIndex = 0
@@ -389,6 +482,7 @@ function assignBWLLoot()
     else
         --        print("should give " .. LootLC.itemSlotID .. "(" .. LootLC.itemName .. ") to raider index : " .. RaiderWinerIndex .. " " .. GetMasterLootCandidate(RaiderWinerIndex))
         GiveMasterLoot(LootLC.itemSlotID, RaiderWinerIndex);
+        SendChatMessage("LC: Giving " .. LootLC.itemLink .. " to " .. winnerName, "RAID")
         LootLC.itemName = ""
         LootLC.itemSlotID = 0
         LootLC:SendReset()
@@ -673,7 +767,7 @@ function LootLC:UpdateView()
     if (LootLC.voteTie) then
         LootLC.voteTieRollers = winners
         getglobal("MLToWinnerButton"):Enable()
-        getglobal("MLToWinnerButton"):SetText(maxVotes .. " votes TIE ! Roll " .. winners .. "?")
+        getglobal("MLToWinnerButton"):SetText("VOTE TIE (" .. maxVotes .. " votes) ! ROLL " .. winners .. " ?")
     else
         if (winner ~= "") then
             getglobal("MLToWinnerButton"):Enable()
@@ -806,7 +900,7 @@ comms:SetScript("OnEvent", function()
             end
             -- vote counter
             if (arg1 == "TWLC") then
-                if (string.find(arg2, 'myVote:', 1)) then
+                if (string.find(arg2, 'myVote:', 1, true)) then
                     local vote = string.split(arg2, ':')
                     -- myVote:+:Tyrelys
                     if (vote[2] == '+') then
@@ -823,7 +917,7 @@ end)
 
 
 function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
-    if (string.find(t, 'item~', 1)) then
+    if (string.find(t, 'item~', 1, true)) then
         local i = string.split(t, "~")
         itemLinkButton:SetText(i[3])
         itemLinkButton:SetScript("OnClick", function(self)
@@ -833,10 +927,10 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
         --            SetItemRef(i[2])
         --        end)
     end
-    if (string.find(t, 'withAddon:', 1)) then
+    if (string.find(t, 'withAddon:', 1, true)) then
         local i = string.split(t, ":")
         local star = ""
-        if (string.find(i[3], "*", 1)) then
+        if (string.find(i[3], "*", 1, true)) then
             i[3] = string.sub(i[3], 2, string.len(i[3]))
             star = "*"
         end
@@ -851,7 +945,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             end
         end
     end
-    if (string.find(t, 'command:', 1)) then
+    if (string.find(t, 'command:', 1, true)) then
         local com = string.split(t, ":")
         if (com[2] == "reset") then
             LootLC:ResetVars()
@@ -874,7 +968,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             end
         end
     end
-    if (string.find(t, 'currentItems:', 1)) then
+    if (string.find(t, 'currentItems:', 1, true)) then
         local itemsString = string.split(t, "tItems:")
         local items = string.split(itemsString[2], "~")
         local k = 0
@@ -883,7 +977,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             LootLC.currentItem[k] = item
         end
     end
-    if (string.find(t, 'players:', 1)) then
+    if (string.find(t, 'players:', 1, true)) then
         local wdp = string.split(t, ":")
         local players = string.split(wdp[2], " ")
         local k = 0
@@ -894,7 +988,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
         getglobal("LootLCWindow"):SetHeight(200 + k * 40)
         LootLC:AddPlayers()
     end
-    if (string.find(t, 'myVote:', 1)) then
+    if (string.find(t, 'myVote:', 1, true)) then
         local vote = string.split(t, ':')
         local i = 0
         for name, votes in next, LootLC.votes do
