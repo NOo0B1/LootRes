@@ -305,11 +305,22 @@
                 </Backdrop>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="-">
+                        <FontString name="PeopleWhoVotedNamesTitle" inherits="GameFontNormalSmall" text="Voted">
                             <Anchors>
-                                <Anchor point="CENTER">
+                                <Anchor point="TOPLEFT">
                                     <Offset>
-                                        <AbsDimension x="0" y="0"/>
+                                        <AbsDimension x="5" y="-5"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="Smultron Ilmane Babagiega Faralynn\\nTyrelys Momo Trepp Chlo\nEr Chlothar Aurelian">
+                            <Anchors>
+                                <Anchor point="TOP">
+                                    <Offset>
+                                        <AbsDimension x="0" y="-8"/>
                                     </Offset>
                                 </Anchor>
                             </Anchors>
