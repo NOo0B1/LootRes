@@ -29,7 +29,7 @@ end
 
 function LCDebug(a)
     if (UnitName('player') == 'Er' or
-            UnitName('player') == 'Xerrbear1' or
+            UnitName('player') == 'Xerrbear' or
             UnitName('player') == 'Cosmort1' or
             UnitName('player') == 'Earis' or
             UnitName('player') == 'Tabc') then
@@ -331,7 +331,7 @@ end)
 
 function CheckRolls(arg)
 
-    if (string.find(arg, "rolls", 1, true) and not string.find(arg, "(1-100)", 1, true)) then --dev
+    if (string.find(arg, "rolls", 1, true) and string.find(arg, "(1-100)", 1, true)) then --dev
         local r = string.split(arg, " ")
 
         --        LCDebug(LootLC.tieRollers);
