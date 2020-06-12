@@ -2,6 +2,8 @@
     xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
     <Script file="LootLC.lua"/>
 
+    <GameTooltip name="LCTooltip" inherits="GameTooltipTemplate" parent="UIParent" hidden="true"/>
+
     <Frame name="PlayerWantsFrameTemplate" virtual="true">
         <Size>
             <AbsDimension x="400" y="38"/>
@@ -50,9 +52,9 @@
                 </FontString>
                 <FontString name="$parentItem" inherits="GameFontNormal" text="[Current item]">
                     <Anchors>
-                        <Anchor point="RIGHT">
+                        <Anchor point="CENTER">
                             <Offset>
-                                <AbsDimension x="-100" y="0"/>
+                                <AbsDimension x="0" y="0"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -122,9 +124,9 @@
                     <AbsDimension x="220" y="45"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="RIGHT">
+                    <Anchor point="CENTER">
                         <Offset>
-                            <AbsDimension x="-100" y="6"/>
+                            <AbsDimension x="0" y="5"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -333,8 +335,7 @@
                         </FontString>
                     </Layer>
                     <Layer level="OVERLAY">
-                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal"
-                                    text="Smultron Ilmane Babagiega Faralynn\\nTyrelys Momo Trepp Chlo\nEr Chlothar Aurelian">
+                        <FontString name="PeopleWhoVotedNames" inherits="GameFontNormal" text="">
                             <Anchors>
                                 <Anchor point="TOP">
                                     <Offset>
@@ -377,15 +378,6 @@
                 </Backdrop>
                 <Layers>
                     <Layer level="OVERLAY">
-                        <FontString name="VotedItemText" inherits="GameFontNormal" text="">
-                            <Anchors>
-                                <Anchor point="CENTER">
-                                    <Offset>
-                                        <AbsDimension x="0" y="0"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
                         <Texture name="LCMLIcon" file="Interface\GroupFrame\UI-Group-MasterLooter">
                             <Size>
                                 <AbsDimension x="16" y="16"/>
@@ -408,7 +400,7 @@
                         <PushedTexture inherits=""/>
                         <DisabledTexture inherits=""/>
                         <HighlightTexture inherits=""/>
-                        <NormalFont inherits="GameFontRed"/>
+                        <NormalFont inherits="GameFontWhite"/>
                         <Size>
                             <AbsDimension x="400" y="35"/>
                         </Size>
