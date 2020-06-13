@@ -8,7 +8,7 @@ local rollers = {} --list of people who rolled
 local maxRoll = 0 --max recorded roll
 local reservedNames = "";
 
-local secondsToRoll = 7
+local secondsToRoll = 15
 local T = 1 --start
 local C = secondsToRoll --count to
 local lastRolledItem = "" --offspec roll
@@ -406,7 +406,36 @@ end
 
 function LootRes:lootres_reserves()
     return {
-        ["Er"] = "Tea with Sugar",
-        ["Ilmane"] = "Sacred Candle",
+        ["Tyrelys"] = "Band of Accuria",
+        ["Halyeth"] = "Quick Strike Ring",
+        ["Kidney"] = "Nightslayer Shoulder Pads",
+        ["Laughadin"] = "Judgement Legplates",
+        ["Er"] = "Cauterizing Band",
+        ["Chlo"] = "Cloak of the Shrouded Mists",
+        ["Faralynn"] = "Wild Growth Spaulders",
+        ["Aurrius"] = "Robe of Volatile Power",
+        ["Smersh"] = "Band of Accuria",
+        ["Ruari"] = "Cloak of the Shrouded Mists",
+        ["Edward"] = "Essence of the Pure Flame",
+        ["Faustus"] = "Mana Igniting Cord",
+        ["Leyvar"] = "Onslaught Girdle",
+        ["Cloudburst"] = "Talisman of Ephemeral Power",
+        ["Smultron"] = "Onslaught Girdle",
+        ["Engie"] = "Band of Accuria",
+        ["Vaedath"] = "Brutality Blade",
+        ["Motorboat"] = "Choker of the Fire Lord",
+        ["Trepp"] = "Choker of the Fire Lord",
+        ["Yin"] = "Eye of Divinity",
+        ["Wither"] = "Giantstalker's Breastplate",
+        ["Furryslayer"] = "Choker of the Fire Lord",
+        ["Justherczeg"] = "Choker of the Fire Lord",
+        ["Raymundo"] = "Giantstalker's helmet",
+        ["Realniccyb"] = "Azuresong Mageblade",
+        ["Griemhild"] = "Mana Igniting Cord",
+        ["Ravenoak"] = "Giantstalker's Helmet",
+        ["Momo"] = "Choker of the Fire Lord",
+        ["Kratos"] = "Brutality Blade",
+        ["Tonysoprano"] = "Nightslayer Boots",
+        ["Lulzer"] = "Heavy Dark Iron Ring"
     }
 end
