@@ -8,7 +8,7 @@ local rollers = {} --list of people who rolled
 local maxRoll = 0 --max recorded roll
 local reservedNames = "";
 
-local secondsToRoll = 15
+local secondsToRoll = 11
 local T = 1 --start
 local C = secondsToRoll --count to
 local lastRolledItem = "" --offspec roll
@@ -27,23 +27,12 @@ LootRes:SetScript("OnEvent", function()
             LootRes:CheckRolls(arg1)
         end
     end
-
-    local score, r, g, b = LootRes:ScanUnit("mouseover")
-    if score and r and g and b then
-        --        LootRes:AddLine("LootRes1: " .. score, r, g, b)
-        --        LootRes:Show()
-    end
 end)
 
 function LootRes:ReserveItem(text, player)
-
-
     local newItem = LootResReplace(text, "-mcres ", "")
     local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(newItem)
-
     print(itemName)
-
-    --    if (lootres_reserves[player] )
 end
 
 
@@ -89,8 +78,6 @@ LootRes:SetScript("OnShow", function()
                     end
                 end
             end
-
-            --        GameTooltip:AddLine("test", 1, 1, 1)
         end
 
         GameTooltip:Show()
