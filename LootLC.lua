@@ -16,8 +16,9 @@ local LootLC = CreateFrame("Frame")
 LootLC:Hide()
 
 LOOT_HISTORY = {} --saved
-local TIME_TO_VOTE = 30
-local TIME_TO_LINK = 10
+TIME_TO_VOTE = 30 --saved
+TIME_TO_LINK = 10 --saved
+local lootHistoryMinRarity = 0
 
 local WAITING_FOR_VOTES = "Waiting for votes..."
 local WAITING_FOR_ROLLS_FROM = 'Waiting for rolls from'
@@ -33,7 +34,7 @@ function LCDebug(a)
             UnitName('player') == 'Cosmort1' or
             UnitName('player') == 'Earis' or
             UnitName('player') == 'Tabc') then
-        lcprint('|cff0070de[LCDebug] |cffffffff[' .. a .. ']')
+        lcprint('|cff0070de[LCDebug :' .. time() .. '] |cffffffff[' .. a .. ']')
     end
 end
 
@@ -200,6 +201,23 @@ LootLC.onlyOnePersonLinked = false
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
     if (cmd) then
+        --todo /lc setvotetime setlinktime
+        if (string.find(cmd, 'set', 1, true)) then
+            local setEx = string.split(cmd, ' ')
+            if (setEx[2] and setEx[3]) then
+                if (setEx[2] == 'ttv') then TIME_TO_VOTE = tonumber(setEx[3])
+                    lcprint('TIME_TO_VOTE set to ' .. setEx[3])
+                end
+                if (setEx[2] == 'ttl') then TIME_TO_LINK = tonumber(setEx[3])
+                    lcprint('TIME_TO_LINK set to ' .. setEx[3])
+                    secondsToLink = TIME_TO_LINK
+                    C = secondsToLink
+                end
+            else
+                lcprint('TIME_TO_VOTE (ttv) = ' .. TIME_TO_VOTE)
+                lcprint('TIME_TO_LINK (ttl) = ' .. TIME_TO_LINK)
+            end
+        end
         if (cmd == 'show') then
             LootLC.waitingForVotes = false
             getglobal("LootLCWindow"):Show()
@@ -228,6 +246,24 @@ SlashCmdList["LC"] = function(cmd)
         end
     end
 end
+
+LootRes:SetScript("OnShow", function()
+    -- item tooltips
+    --disabled for now
+--    if GameTooltip.itemLink then
+--        local _, _, itemLink = string.find(GameTooltip.itemLink, "(item:%d+:%d+:%d+:%d+)");
+--
+--        local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
+--
+--        for lootTime, item in next, LOOT_HISTORY do
+--            if (string.find(item['item'], itemLink, 1, true)) then
+--                GameTooltip:AddLine(item['player'] .. ' - ' .. date("%x", lootTime))
+--            end
+--        end
+--
+--        GameTooltip:Show()
+--    end
+end)
 
 LootLC:SetScript("OnUpdate", function()
 
@@ -304,8 +340,32 @@ LootLCTooltip:SetScript("OnEvent", function()
             --
         end
 
+        if (event == 'UPDATE_MOUSEOVER_UNIT') then
+            --            LCDebug('update mouseover unit')
+            --            LCDebug(UnitName("mouseover"))
+            --            if UnitIsPlayer("mouseover") then
+            --                LCDebug('is player')
+            --            local totalItems = 0
+            --            for lootTime, item in next, LOOT_HISTORY do
+            --                if (UnitName("mouseover") == item['player']) then
+            --                    totalItems = totalItems + 1
+            --                end
+            --            end
+            --            GameTooltip:AddLine("Loot history (" .. totalItems .. ")")
+            --
+            --            for lootTime, item in next, LOOT_HISTORY do
+            --                if (UnitName("mouseover") == item['player']) then
+            --                    GameTooltip:AddLine(item['player'] .. ' - ' .. date("%x", lootTime))
+            --                end
+            --            end
+            --            end
+        end
+
         if (event == 'ADDON_LOADED' and arg1 == "LootRes") then
             getglobal("TWRaidersFrameTitleText"):SetText("TW Loot Council Vote (v" .. addonVer .. ")")
+            secondsToLink = TIME_TO_LINK
+            T = 1 --start
+            C = secondsToLink --count to
         end
         if ((event == 'CHAT_MSG_RAID' or event == 'CHAT_MSG_RAID_LEADER') and linksOpen) then
             LootLC:CheckLinks(arg1, arg2)
@@ -325,8 +385,6 @@ LootLCTooltip:SetScript("OnEvent", function()
             end
         end
     end
-
-    local score, r, g, b = LootLCTooltip:ScanUnit("mouseover")
 end)
 
 function CheckRolls(arg)
@@ -496,11 +554,6 @@ LootLCTooltip:SetScript("OnHide", function()
     GameTooltip.itemLink = nil
 end)
 
-function LootLCTooltip:ScanUnit(target)
-    if not UnitIsPlayer(target) then return nil end
-    return 0, 0, 0, 0
-end
-
 local LootResHookSetBagItem = GameTooltip.SetBagItem
 function GameTooltip.SetBagItem(self, container, slot)
     GameTooltip.itemLink = GetContainerItemLink(container, slot)
@@ -608,10 +661,7 @@ function assignBWLLoot()
             if not LootWindowCheck() then return end
             GiveMasterLoot(LootLC.itemSlotID, RaiderWinerIndex);
             SendChatMessage("LC: Giving " .. LootLC.itemLink .. " to " .. onlyWinnerName, "RAID")
-            LOOT_HISTORY[onlyWinnerName] = {
-                ['date'] = GetTime(),
-                ['item'] = LootLC.itemLink
-            }
+            saveLoot(LootLC.itemLink, onlyWinnerName)
             LootLC.itemName = ""
             LootLC.itemSlotID = 0
             LootLC:SendReset()
@@ -708,10 +758,7 @@ function assignBWLLoot()
     else
         --        lcprint("should give " .. LootLC.itemSlotID .. "(" .. LootLC.itemName .. ") to raider index : " .. RaiderWinerIndex .. " " .. GetMasterLootCandidate(RaiderWinerIndex))
         GiveMasterLoot(LootLC.itemSlotID, RaiderWinerIndex);
-        LOOT_HISTORY[winnerName] = {
-            ['date'] = GetTime(),
-            ['item'] = LootLC.itemLink
-        }
+        saveLoot(LootLC.itemLink, winnerName)
         SendChatMessage("LC: Giving " .. LootLC.itemLink .. " to " .. winnerName, "RAID")
         LootLC.itemName = ""
         LootLC.itemSlotID = 0
@@ -790,6 +837,37 @@ function LootLC:AddPlayers()
         LootLC.playerFrames[i]:SetPoint("TOP", getglobal("VotedItemFrame"), "TOP", 0, -5 - (40 * i))
 
         getglobal("PlayerWantsFrame" .. i .. "Name"):SetText(name);
+
+        getglobal("PlayerWantsFrame" .. i .. "NameContainerName"):SetText(name)
+        getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetID(i)
+        --        getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetScript("OnEnter", function()
+
+        --            local totalItems = 0
+        --            local itemHistory = ""
+        --            local i = self:GetID()
+        --            local historyPlayerName = getglobal("PlayerWantsFrame" .. i .. "NameContainerName"):GetText()
+        --            for lootTime, item in next, LOOT_HISTORY do
+        --                if (historyPlayerName == item['player']) then
+        --                    totalItems = totalItems + 1
+        --                end
+        --            end
+        --            GameTooltip:AddLine("Loot history (" .. totalItems .. ")")
+        --
+        --            for lootTime, item in next, LOOT_HISTORY do
+        --                if (historyPlayerName == item['player']) then
+        --                    itemHistory = itemHistory .. item['item'] .. " - " .. date("%d/%m", lootTime) .. "\n"
+        --                end
+        --            end
+        --
+        --            getglobal('LootHistoryFrameTitle'):SetText(historyPlayerName .. "'s Loot History (" .. totalItems .. ")")
+        --
+        --            getglobal("LootHistoryFrameItems"):SetText(itemHistory)
+        --
+        --            getglobal('LootHistoryFrame'):Show()
+        --        end)
+        --        getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetScript("OnLeave", function(self)
+        --            getglobal('LootHistoryFrame'):Hide()
+        --        end)
 
         if (LootLC.currentItem[name]) then --local
             currentItems = currentItems .. LootLC.currentItem[name] .. "~"
@@ -1021,7 +1099,7 @@ end
 
 function LootLC:UpdatePleaseVote()
 
-    LCDebug('update pleasevote trigger')
+    --    LCDebug('update pleasevote trigger')
 
     local text = ""
     local totalV = ""
@@ -1197,6 +1275,17 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             end
         end
     end
+    if (string.find(t, 'saveloot~', 1, true)) then
+        local com = string.split(t, '~')
+        if (com[1] == 'saveloot' and com[2] and com[3]) then
+            LOOT_HISTORY[time()] = {
+                ['player'] = com[3],
+                ['item'] = com[2]
+            }
+        else
+            LCDebug('loot not saved, data: ' .. t)
+        end
+    end
     if (string.find(t, 'command:', 1, true)) then
         local com = string.split(t, ":")
         if (com[2] == "reset") then
@@ -1227,7 +1316,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
                 for index, name in next, comTieRollersEx do
                     comTieRollersColored = comTieRollersColored .. getRaiderColor(name) .. name .. " "
                 end
-                getglobal("VotingOpenTimerText"):SetText("TIE Rolls : (" .. com[4] ..") " .. comTieRollersColored)
+                getglobal("VotingOpenTimerText"):SetText("TIE Rolls : (" .. com[4] .. ") " .. comTieRollersColored)
             else
             end
         end
@@ -1307,6 +1396,45 @@ end
 
 -- utils
 
+function NameContainer_OnEnter(id)
+    local totalItems = 0
+    local itemHistory = ""
+
+    local historyPlayerName = getglobal("PlayerWantsFrame" .. id .. "NameContainerName"):GetText()
+    for lootTime, item in next, LOOT_HISTORY do
+        if (historyPlayerName == item['player']) then
+            local _, _, itemLink = string.find(item['item'], "(item:%d+:%d+:%d+:%d+)");
+            local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
+            if (itemRarity >= 4) then
+                totalItems = totalItems + 1
+            end
+        end
+    end
+    GameTooltip:AddLine("Loot history (" .. totalItems .. ")")
+
+    for lootTime, item in pairsByKeys(LOOT_HISTORY) do
+        if (historyPlayerName == item['player']) then
+
+            local _, _, itemLink = string.find(item['item'], "(item:%d+:%d+:%d+:%d+)");
+            local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
+
+            if (itemRarity >= lootHistoryMinRarity) then
+                itemHistory = itemHistory .. item['item'] .. " - " .. date("%d/%m %X", lootTime) .. "\n"
+            end
+        end
+    end
+
+    getglobal('LootHistoryFrameTitle'):SetText(historyPlayerName .. "'s Loot History (" .. totalItems .. ")")
+
+    getglobal("LootHistoryFrameItems"):SetText(itemHistory)
+
+    getglobal('LootHistoryFrame'):Show()
+end
+
+function NameContainer_OnLeave()
+    getglobal('LootHistoryFrame'):Hide()
+end
+
 function addOnEnterTooltip(frame, itemLink)
     frame:SetScript("OnEnter", function(self)
         LCTooltip:SetOwner(this, "ANCHOR_RIGHT", -(this:GetWidth() / 2), -(this:GetHeight() / 2));
@@ -1316,6 +1444,15 @@ function addOnEnterTooltip(frame, itemLink)
     frame:SetScript("OnLeave", function(self)
         LCTooltip:Hide();
     end)
+end
+
+function saveLoot(loot, player)
+    --    LOOT_HISTORY = {} --debug reset
+    LOOT_HISTORY[time()] = {
+        ['player'] = player,
+        ['item'] = loot
+    }
+    SendAddonMessage("TWLC", "saveloot~" .. loot .. "~" .. player, "RAID")
 end
 
 function isAssistOrRL(name)
@@ -1350,3 +1487,41 @@ function string:split(delimiter)
     table.insert(result, string.sub(self, from))
     return result
 end
+
+
+function pairsByKeys (t, f)
+    local a = {}
+    for n in pairs(t) do table.insert(a, n) end
+    table.sort(a, function(a,b) return a>b end)
+    local i = 0      -- iterator variable
+    local iter = function ()   -- iterator function
+        i = i + 1
+        if a[i] == nil then return nil
+        else return a[i], t[a[i]]
+        end
+    end
+    return iter
+end
+
+--function GameTooltip_OnLoad()
+--    this:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
+--    this:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b);
+--    GameTooltip:AddLine('test')
+--end
+
+--function TargetFrame_OnClick(button)
+--    if ( SpellIsTargeting() and button == "RightButton" ) then
+--        SpellStopTargeting();
+--        return;
+--    end
+--    if ( button == "LeftButton" ) then
+--        if ( SpellIsTargeting() ) then
+--            SpellTargetUnit("target");
+--        elseif ( CursorHasItem() ) then
+--            DropItemOnUnit("target");
+--        end
+--    else
+--        TargetRightClickLCMenu:Show()
+--        ToggleDropDownMenu(1, nil, TargetFrameDropDown, "TargetFrame", 120, 10);
+--    end
+--end
