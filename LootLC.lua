@@ -18,7 +18,7 @@ LootLC:Hide()
 LOOT_HISTORY = {} --saved
 TIME_TO_VOTE = 30 --saved
 TIME_TO_LINK = 10 --saved
-local lootHistoryMinRarity = 0
+local lootHistoryMinRarity = 4
 
 local WAITING_FOR_VOTES = "Waiting for votes..."
 local WAITING_FOR_ROLLS_FROM = 'Waiting for rolls from'
@@ -38,7 +38,7 @@ function LCDebug(a)
     end
 end
 
-local addonVer = "1.1.5"
+local addonVer = "1.1.6"
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
