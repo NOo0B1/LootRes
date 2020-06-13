@@ -32,7 +32,7 @@
         </Backdrop>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString name="$parentName" inherits="GameFontNormal" text="[Name]">
+                <FontString name="$parentName" inherits="GameFontNormal" text="[Name]" hidden="true">
                     <Anchors>
                         <Anchor point="LEFT">
                             <Offset>
@@ -137,6 +137,55 @@
                 </Scripts>
             </Button>
 
+            <Frame name="$parentNameContainer" enableMouse="true">
+                <Size>
+                    <AbsDimension x="90" y="40"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="1Interface\DialogFrame\UI-DialogBox-Background"
+                          tile="true">
+                    <EdgeSize>
+                        <AbsValue val="16"/>
+                    </EdgeSize>
+                    <TileSize>
+                        <AbsValue val="16"/>
+                    </TileSize>
+                    <BackgroundInsets>
+                        <AbsInset left="4" right="4" top="4" bottom="4"/>
+                    </BackgroundInsets>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parentName" inherits="GameFontNormal" text="new name">
+                            <Anchors>
+                                <Anchor point="LEFT">
+                                    <Offset>
+                                        <AbsDimension x="15" y="5"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                </Frames>
+
+                <Scripts>
+                    <OnEnter>
+                            NameContainer_OnEnter(this:GetID());
+                    </OnEnter>
+                    <OnLeave>
+                            NameContainer_OnLeave();
+                    </OnLeave>
+
+                </Scripts>
+            </Frame>
         </Frames>
 
         <Scripts>
@@ -298,7 +347,6 @@
                 </Scripts>
             </Frame>
 
-
             <Frame name="PeoplWhoVotedFrame" hidden="false" toplevel="true">
                 <Size>
                     <AbsDimension x="400" y="40"/>
@@ -425,7 +473,6 @@
                 </Scripts>
             </Frame>
 
-
             <Frame name="VotingOpenTimerFrame" hidden="false" toplevel="true">
                 <Size>
                     <AbsDimension x="400" y="40"/>
@@ -456,6 +503,59 @@
                                 <Anchor point="CENTER">
                                     <Offset>
                                         <AbsDimension x="0" y="0"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                </Frames>
+
+                <Scripts>
+                </Scripts>
+            </Frame>
+
+            <Frame name="LootHistoryFrame" toplevel="true" hidden="true">
+                <Size>
+                    <AbsDimension x="200" y="200"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="-200" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+                          tile="true">
+                    <EdgeSize>
+                        <AbsValue val="16"/>
+                    </EdgeSize>
+                    <TileSize>
+                        <AbsValue val="16"/>
+                    </TileSize>
+                    <BackgroundInsets>
+                        <AbsInset left="4" right="4" top="4" bottom="4"/>
+                    </BackgroundInsets>
+                </Backdrop>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parentTitle" inherits="GameFontNormal" text="Xerrbear's Loot History">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT">
+                                    <Offset>
+                                        <AbsDimension x="-15" y="-15"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="$parentItems" inherits="GameFontNormalSmall" text="items"
+                                    justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="TOPRIGHT">
+                                    <Offset>
+                                        <AbsDimension x="-15" y="-30"/>
                                     </Offset>
                                 </Anchor>
                             </Anchors>
@@ -516,5 +616,6 @@
             </OnDragStop>
         </Scripts>
     </Frame>
+
 
 </Ui>
