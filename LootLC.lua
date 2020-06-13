@@ -153,7 +153,7 @@ LootLC:SetScript("OnShow", function()
     this.timeToVote = TIME_TO_VOTE
 end)
 
-LootLCTooltip:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+--LootLCTooltip:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID")
 LootLCTooltip:RegisterEvent("CHAT_MSG_SYSTEM") --rolls
 LootLCTooltip:RegisterEvent("CHAT_MSG_RAID_LEADER")
@@ -247,24 +247,6 @@ SlashCmdList["LC"] = function(cmd)
     end
 end
 
-LootRes:SetScript("OnShow", function()
-    -- item tooltips
-    --disabled for now
---    if GameTooltip.itemLink then
---        local _, _, itemLink = string.find(GameTooltip.itemLink, "(item:%d+:%d+:%d+:%d+)");
---
---        local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
---
---        for lootTime, item in next, LOOT_HISTORY do
---            if (string.find(item['item'], itemLink, 1, true)) then
---                GameTooltip:AddLine(item['player'] .. ' - ' .. date("%x", lootTime))
---            end
---        end
---
---        GameTooltip:Show()
---    end
-end)
-
 LootLC:SetScript("OnUpdate", function()
 
     if (not this.waitingForVotes) then
@@ -338,27 +320,6 @@ LootLCTooltip:SetScript("OnEvent", function()
         end
         if (event == 'LOOT_CLOSED') then
             --
-        end
-
-        if (event == 'UPDATE_MOUSEOVER_UNIT') then
-            --            LCDebug('update mouseover unit')
-            --            LCDebug(UnitName("mouseover"))
-            --            if UnitIsPlayer("mouseover") then
-            --                LCDebug('is player')
-            --            local totalItems = 0
-            --            for lootTime, item in next, LOOT_HISTORY do
-            --                if (UnitName("mouseover") == item['player']) then
-            --                    totalItems = totalItems + 1
-            --                end
-            --            end
-            --            GameTooltip:AddLine("Loot history (" .. totalItems .. ")")
-            --
-            --            for lootTime, item in next, LOOT_HISTORY do
-            --                if (UnitName("mouseover") == item['player']) then
-            --                    GameTooltip:AddLine(item['player'] .. ' - ' .. date("%x", lootTime))
-            --                end
-            --            end
-            --            end
         end
 
         if (event == 'ADDON_LOADED' and arg1 == "LootRes") then
@@ -554,17 +515,17 @@ LootLCTooltip:SetScript("OnHide", function()
     GameTooltip.itemLink = nil
 end)
 
-local LootResHookSetBagItem = GameTooltip.SetBagItem
+local LootLCHookSetBagItem = GameTooltip.SetBagItem
 function GameTooltip.SetBagItem(self, container, slot)
     GameTooltip.itemLink = GetContainerItemLink(container, slot)
     _, GameTooltip.itemCount = GetContainerItemInfo(container, slot)
-    return LootResHookSetBagItem(self, container, slot)
+    return LootLCHookSetBagItem(self, container, slot)
 end
 
-local LootResHookSetLootItem = GameTooltip.SetLootItem
+local LootLCHookSetLootItem = GameTooltip.SetLootItem
 function GameTooltip.SetLootItem(self, slot)
     GameTooltip.itemLink = GetLootSlotLink(slot)
-    LootResHookSetLootItem(self, slot)
+    LootLCHookSetLootItem(self, slot)
 end
 
 whoResponderTimer:SetScript("OnUpdate", function()
