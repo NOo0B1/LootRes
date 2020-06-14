@@ -20,6 +20,8 @@ TIME_TO_VOTE = 30 --saved
 TIME_TO_LINK = 10 --saved
 local lootHistoryMinRarity = 4
 
+local me = UnitName('player')
+
 local WAITING_FOR_VOTES = "Waiting for votes..."
 local WAITING_FOR_ROLLS_FROM = 'Waiting for rolls from'
 local WAITING_FOR_ROLLS_AGAIN_FROM = 'Waiting for rolls again from'
@@ -29,16 +31,16 @@ function lcprint(a)
 end
 
 function LCDebug(a)
-    if (UnitName('player') == 'Er' or
-            UnitName('player') == 'Xerrbear' or
-            UnitName('player') == 'Cosmort1' or
-            UnitName('player') == 'Earis' or
-            UnitName('player') == 'Tabc') then
+    if (me == 'Er' or
+            me == 'Xerrbear' or
+            me == 'Cosmort1' or
+            me == 'Earis' or
+            me == 'Tabc') then
         lcprint('|cff0070de[LCDebug :' .. time() .. '] |cffffffff[' .. a .. ']')
     end
 end
 
-local addonVer = "1.1.6"
+local addonVer = "1.1.7" --dont use letters!
 
 linkTimer:Hide()
 linkTimer:SetScript("OnShow", function()
@@ -181,7 +183,8 @@ LootLC.selectedSlot = 0
 
 LootLC.playerFrames = {}
 LootLC.votes = {}
-LootLC.currentItem = {}
+LootLC.currentItem = {} --local list of items
+LootLC.recItems = {} --remote list of items
 LootLC.myVote = ""
 LootLC.myVotes = {}
 LootLC.itemName = ""
@@ -201,7 +204,6 @@ LootLC.onlyOnePersonLinked = false
 SLASH_LC1 = "/lc"
 SlashCmdList["LC"] = function(cmd)
     if (cmd) then
-        --todo /lc setvotetime setlinktime
         if (string.find(cmd, 'set', 1, true)) then
             local setEx = string.split(cmd, ' ')
             if (setEx[2] and setEx[3]) then
@@ -225,22 +227,13 @@ SlashCmdList["LC"] = function(cmd)
         if (cmd == 'who') then
             lcprint("Listing people with the addon (* = can vote):")
             resetRoster()
-            local canVote = false
-            for i = 0, GetNumRaidMembers() do
-                if (GetRaidRosterInfo(i)) then
-                    local n, r = GetRaidRosterInfo(i);
-                    if (n == UnitName('player') and (r == 1 or r == 2)) then
-                        canVote = true
-                    end
-                end
-            end
-            if (canVote) then
-                lcprint("*" .. colorPlayer(UnitName('player')) .. " (ver. " .. addonVer .. ")")
+            if isAssistOrRL(me) then
+                lcprint("*" .. colorPlayer(me) .. " version " .. addonVer .. ")")
             else
-                lcprint("" .. colorPlayer(UnitName('player')) .. " (ver. " .. addonVer .. ")")
+                lcprint("" .. colorPlayer(me) .. " version " .. addonVer .. ")")
             end
-            if (LCRoster[UnitName('player')] ~= nil) then
-                LCRoster[UnitName('player')] = true
+            if (LCRoster[me] ~= nil) then
+                LCRoster[me] = true
             end
             lcWho()
         end
@@ -332,7 +325,7 @@ LootLCTooltip:SetScript("OnEvent", function()
             LootLC:CheckLinks(arg1, arg2)
         end
         if (event == 'CHAT_MSG_RAID' or event == 'CHAT_MSG_RAID_LEADER') then
-            if (IsRaidLeader()) then
+            if (isRealRaidLeader(me)) then
                 getglobal('LCResetVoteButton'):Show()
                 getglobal('MLToWinnerButtonFrame'):Show()
             else
@@ -352,10 +345,6 @@ function CheckRolls(arg)
 
     if (string.find(arg, "rolls", 1, true) and string.find(arg, "(1-100)", 1, true)) then --dev
         local r = string.split(arg, " ")
-
-        --        LCDebug(LootLC.tieRollers);
-
-        --        local rlrs = string.split(LootLC.tieRollers, " ")
         local shouldRoll = false
         for k, n in next, LootLC.tieRollers do
             LCDebug('r[1] = *' .. r[1] .. '* vs  LootLC.tieRollers ' .. k .. ' = *' .. n .. '*');
@@ -569,7 +558,6 @@ linkTimer:SetScript("OnUpdate", function()
                 getglobal("LootLCWindow"):SetHeight(200 + j * 40)
             end
 
-
         else
             --
         end
@@ -597,8 +585,6 @@ function LootWindowCheck()
 end
 
 function assignBWLLoot()
-
-
 
     -- case where only one person linked
     if (LootLC.onlyOnePersonLinked) then
@@ -734,7 +720,7 @@ function BWLLoot()
         return
     end
 
-    if (not IsRaidLeader()) then
+    if (not isRealRaidLeader(me)) then
         lcprint("You're not Raid Leader.")
         return
     end
@@ -788,6 +774,7 @@ function LootLC:AddPlayers()
     local i = 0;
     local names = ""
     local currentItems = "" --for sending over
+    local ci = {} -- for sending, new
     for name, votes in next, LootLC.votes do
         i = i + 1
         if (not LootLC.playerFrames[i]) then
@@ -801,37 +788,11 @@ function LootLC:AddPlayers()
 
         getglobal("PlayerWantsFrame" .. i .. "NameContainerName"):SetText(name)
         getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetID(i)
-        --        getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetScript("OnEnter", function()
-
-        --            local totalItems = 0
-        --            local itemHistory = ""
-        --            local i = self:GetID()
-        --            local historyPlayerName = getglobal("PlayerWantsFrame" .. i .. "NameContainerName"):GetText()
-        --            for lootTime, item in next, LOOT_HISTORY do
-        --                if (historyPlayerName == item['player']) then
-        --                    totalItems = totalItems + 1
-        --                end
-        --            end
-        --            GameTooltip:AddLine("Loot history (" .. totalItems .. ")")
-        --
-        --            for lootTime, item in next, LOOT_HISTORY do
-        --                if (historyPlayerName == item['player']) then
-        --                    itemHistory = itemHistory .. item['item'] .. " - " .. date("%d/%m", lootTime) .. "\n"
-        --                end
-        --            end
-        --
-        --            getglobal('LootHistoryFrameTitle'):SetText(historyPlayerName .. "'s Loot History (" .. totalItems .. ")")
-        --
-        --            getglobal("LootHistoryFrameItems"):SetText(itemHistory)
-        --
-        --            getglobal('LootHistoryFrame'):Show()
-        --        end)
-        --        getglobal("PlayerWantsFrame" .. i .. "NameContainer"):SetScript("OnLeave", function(self)
-        --            getglobal('LootHistoryFrame'):Hide()
-        --        end)
 
         if (LootLC.currentItem[name]) then --local
             currentItems = currentItems .. LootLC.currentItem[name] .. "~"
+
+            ci[name] = LootLC.currentItem[name]
 
             local ll = LootLC.currentItem[name]
             local iItem = string.split(ll, "=")
@@ -842,8 +803,8 @@ function LootLC:AddPlayers()
 
             addOnEnterTooltip(getglobal("PlayerWantsFrame" .. i .. "ItemLinkButton"), string.sub(iItem[2], 2, string.len(iItem[2])))
         else
-            if (LootLC.currentItem[i]) then --remote
-                local ll = LootLC.currentItem[i]
+            if (LootLC.recItems[name]) then --remote
+                local ll = LootLC.recItems[name]
                 local iItem = string.split(ll, "=")
                 local reformatedItem = "|" .. iItem[1] .. "|" .. iItem[2] .. "|h" .. iItem[3] .. "|h|r"
 
@@ -893,11 +854,16 @@ function LootLC:AddPlayers()
         names = names .. " " .. name
     end
 
-    if (IsRaidLeader() and names ~= "") then
+    if (isRealRaidLeader(me) and names ~= "") then
         names = trim(names)
         SendAddonMessage("TWLC", "item~" .. lcItem, "RAID")
-        SendAddonMessage("TWLC", "currentItems:" .. currentItems, "RAID")
-        SendAddonMessage("TWLC", "players:" .. names, "RAID")
+        -- send curent items and players
+        for candidate, item in next, ci do
+            SendAddonMessage("TWLC", "ci~" .. candidate .. "~" .. item, "RAID")
+            LCDebug("ci~" .. candidate .. "~" .. item)
+        end
+        SendAddonMessage("TWLC", "currentItems~end", "RAID")
+        LCDebug("ci~end")
     end
 
     if (i == 1) then --only one person linked, he should get the item
@@ -913,20 +879,17 @@ function LootLC:AddPlayers()
         LootLC.onlyOnePersonLinked = false
     end
 
-    local j
-    for j = 0, GetNumRaidMembers() do
-        if (GetRaidRosterInfo(j)) then
-            local n, r = GetRaidRosterInfo(j);
-            if (n == UnitName('player') and (r == 1 or r == 2)) then
-                if (r == 1 and LootLC.onlyOnePersonLinked) then --Assist & only one -- no ui/vote needed
-                    return
-                end
-                --Leader & Assist & !onlyOneLinked
-                LootLC.waitingForVotes = true
-                getglobal("LootLCWindow"):Show()
-                LootLC:Show() -- start voting timer
-            end
+    if (isAssistOrRL(me)) then
+
+        if (isRealRaidAssist(me) and LootLC.onlyOnePersonLinked) then
+            --Assist & only one -- no ui/vote needed
+            return
         end
+
+        --Leader & Assist & !onlyOneLinked
+        LootLC.waitingForVotes = true
+        getglobal("LootLCWindow"):Show()
+        LootLC:Show() -- start voting timer
     end
 end
 
@@ -960,10 +923,10 @@ function LootLC:Vote(voteName)
                 getglobal("PlayerWantsFrame" .. i .. "VoteButtonCheck"):Show()
                 getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetBackdropColor(0, 0.88, 0.06, 1)
 
-                if (LootLC.voted[UnitName('player')] ~= nil) then
-                    LootLC.voted[UnitName('player')] = LootLC.voted[UnitName('player')] + 1
+                if (LootLC.voted[me] ~= nil) then
+                    LootLC.voted[me] = LootLC.voted[me] + 1
                 else
-                    LootLC.voted[UnitName('player')] = 1
+                    LootLC.voted[me] = 1
                 end
             else
                 LootLC.votes[name] = LootLC.votes[name] - 1
@@ -975,8 +938,8 @@ function LootLC:Vote(voteName)
                 getglobal("PlayerWantsFrame" .. i .. "VoteButton"):SetBackdropColor(0.05, 0.5, 0, 1)
 
 
-                if (LootLC.voted[UnitName('player')] ~= nil) then
-                    LootLC.voted[UnitName('player')] = LootLC.voted[UnitName('player')] - 1
+                if (LootLC.voted[me] ~= nil) then
+                    LootLC.voted[me] = LootLC.voted[me] - 1
                 else
                     lcprint('[debug] nu ar trebui sa ajunga aici')
                 end
@@ -1113,16 +1076,10 @@ function LootLC:SendReset()
 end
 
 function LootLC:ResetVars()
-    local i = 0
-    for i = 0, GetNumRaidMembers() do
-        if (GetRaidRosterInfo(i)) then
-            local n, r = GetRaidRosterInfo(i);
-            if (n == UnitName('player') and (r == 1 or r == 2)) then
-                lcprint("Voting reset.")
-            end
-        end
+    if (isAssistOrRL(me)) then
+        lcprint("Voting reset.")
     end
-    i = 0
+    local i = 0
     for name, votes in next, LootLC.votes do
         i = i + 1
         LootLC.playerFrames[i]:Hide()
@@ -1131,6 +1088,7 @@ function LootLC:ResetVars()
     --    LootLC.playerFrames = {}
     LootLC.votes = {}
     LootLC.currentItem = {}
+    LootLC.recItems = {}
     LootLC.myVote = ""
     LootLC.myVotes = {}
     LootLC.totalVotes = 0
@@ -1177,9 +1135,9 @@ comms:SetScript("OnEvent", function()
     if (event) then
         if (event == 'CHAT_MSG_ADDON') then
 
-            if (arg1 == "TWLC" and arg4 ~= UnitName("player")) then
+            if (arg1 == "TWLC" and arg4 ~= me) then
                 if (not isAssistOrRL(arg4)) then
-                    LCDebug("[Error] Got CHAT_MSG_ADDON from a non assist or raid leader. Ignoring.")
+                    --                    LCDebug("[Error] Got CHAT_MSG_ADDON from a non assist or raid leader. Ignoring.")
                     return
                 end
                 comms:recSync(arg1, arg2, arg3, arg4)
@@ -1187,7 +1145,7 @@ comms:SetScript("OnEvent", function()
             -- vote counter
             if (arg1 == "TWLC") then
 
-                if (IsRaidLeader()) then
+                if (isRealRaidLeader(me)) then
                     getglobal('LCResetVoteButton'):Show()
                     getglobal('MLToWinnerButtonFrame'):Show()
                 else
@@ -1225,14 +1183,18 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             i[3] = string.sub(i[3], 2, string.len(i[3]))
             star = "*"
         end
-        if (i[2] == UnitName('player')) then --i[2] = who requested the who
+        if (i[2] == me) then --i[2] = who requested the who
             if (LCRoster[i[3]] ~= nil) then
                 LCRoster[i[3]] = true --i[3] = responder's name
             end
             if (i[4]) then
-                lcprint(star .. colorPlayer(i[3]) .. " (ver. " .. i[4] .. ")")
+                LCDebug(i[4])
+                local verColor = ""
+                if (verNumber(i[4]) == verNumber(addonVer)) then verColor = classColors['hunter'].c end
+                if (verNumber(i[4]) < verNumber(addonVer)) then verColor = '|cffff222a' end
+                lcprint(star .. colorPlayer(i[3]) .. " version " .. verColor .. i[4])
             else
-                lcprint(star .. colorPlayer(i[3]) .. " (ver. unknown)")
+                lcprint(star .. colorPlayer(i[3]) .. " version unknown)")
             end
         end
     end
@@ -1282,39 +1244,29 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
             end
         end
         if (com[2] == "who") then
-            local i = 0
-            local canVote = false
-            for i = 0, GetNumRaidMembers() do
-                if (GetRaidRosterInfo(i)) then
-                    local n, r = GetRaidRosterInfo(i);
-                    if (n == UnitName('player') and (r == 1 or r == 2)) then
-                        canVote = true
-                    end
+            if isAssistOrRL(me) then
+                SendAddonMessage("TWLC", "withAddon:" .. s .. ":*" .. me .. ":" .. addonVer, "RAID")
+            else
+                SendAddonMessage("TWLC", "withAddon:" .. s .. ":" .. me .. ":" .. addonVer, "RAID")
+            end
+            if (com[3]) then --version number
+                if (verNumber(com[3]) > verNumber(addonVer)) then
+                    lcprint("New version available |cfffff569" .. com[3] .. "|cffffffff, please update.")
                 end
             end
-            if (canVote) then
-                SendAddonMessage("TWLC", "withAddon:" .. s .. ":*" .. UnitName('player') .. ":" .. addonVer, "RAID")
-            else
-                SendAddonMessage("TWLC", "withAddon:" .. s .. ":" .. UnitName('player') .. ":" .. addonVer, "RAID")
-            end
         end
     end
-    if (string.find(t, 'currentItems:', 1, true)) then
-        local itemsString = string.split(t, "tItems:")
-        local items = string.split(itemsString[2], "~")
-        local k = 0
-        for index, item in items do
-            k = k + 1
-            LootLC.currentItem[k] = item
+    if (string.find(t, 'ci~', 1, true)) then --new
+        local ciCandidateItem = string.split(t, "~")
+        if (ciCandidateItem[2] and ciCandidateItem[3]) then
+            LootLC.recItems[ciCandidateItem[2]] = ciCandidateItem[3]
+            LootLC.votes[ciCandidateItem[2]] = 0
         end
     end
-    if (string.find(t, 'players:', 1, true)) then
-        local wdp = string.split(t, ":")
-        local players = string.split(wdp[2], " ")
+    if (string.find(t, 'currentItems~end', 1, true)) then --new
         local k = 0
-        for index, player in players do
+        for index, player in LootLC.recItems do
             k = k + 1
-            LootLC.votes[player] = 0
         end
         getglobal("LootLCWindow"):SetHeight(200 + k * 40)
         LootLC:AddPlayers()
@@ -1351,7 +1303,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
 end
 
 function lcWho()
-    SendAddonMessage("TWLC", "command:who", "RAID")
+    SendAddonMessage("TWLC", "command:who:" .. addonVer, "RAID")
     whoResponderTimer:Show()
 end
 
@@ -1416,21 +1368,6 @@ function saveLoot(loot, player)
     SendAddonMessage("TWLC", "saveloot~" .. loot .. "~" .. player, "RAID")
 end
 
-function isAssistOrRL(name)
-    if (not UnitInRaid('player')) then
-        lcprint("You are not in a raid.")
-        return false
-    end
-    for i = 0, GetNumRaidMembers() do
-        if (GetRaidRosterInfo(i)) then
-            local n, r = GetRaidRosterInfo(i);
-            if (n == name and (r == 1 or r == 2)) then
-                return true
-            end
-        end
-    end
-    return false
-end
 
 function trim(s)
     return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
@@ -1450,18 +1387,53 @@ function string:split(delimiter)
 end
 
 
-function pairsByKeys (t, f)
+function pairsByKeys(t, f)
     local a = {}
     for n in pairs(t) do table.insert(a, n) end
-    table.sort(a, function(a,b) return a>b end)
-    local i = 0      -- iterator variable
-    local iter = function ()   -- iterator function
+    table.sort(a, function(a, b) return a > b end)
+    local i = 0 -- iterator variable
+    local iter = function() -- iterator function
         i = i + 1
         if a[i] == nil then return nil
         else return a[i], t[a[i]]
         end
     end
     return iter
+end
+
+function isRealRaidLeader(name)
+    for i = 0, GetNumRaidMembers() do
+        if (GetRaidRosterInfo(i)) then
+            local n, r = GetRaidRosterInfo(i);
+            if (n == name and r == 2) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function isRealRaidAssist(name)
+    for i = 0, GetNumRaidMembers() do
+        if (GetRaidRosterInfo(i)) then
+            local n, r = GetRaidRosterInfo(i);
+            if (n == name and r == 1) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+function isAssistOrRL(name)
+    return isRealRaidAssist(name) or isRealRaidLeader(name)
+end
+
+function verNumber(ver)
+    return tonumber(string.sub(ver, 1, 1)) * 100 +
+            tonumber(string.sub(ver, 3, 3)) * 10 +
+            tonumber(string.sub(ver, 5, 5)) * 1
 end
 
 --function GameTooltip_OnLoad()
