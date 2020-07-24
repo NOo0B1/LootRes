@@ -31,10 +31,10 @@ function lcprint(a)
 end
 
 function LCDebug(a)
-    if (me == 'Er' or
+    if (me == 'Er2' or
             me == 'Xerrbear' or
-            me == 'Cosmort1' or
-            me == 'Earis' or
+            me == 'Testwarr' or
+            me == 'Kzktst' or
             me == 'Tabc') then
         lcprint('|cff0070de[LCDebug :' .. time() .. '] |cffffffff[' .. a .. ']')
     end
@@ -555,7 +555,7 @@ linkTimer:SetScript("OnUpdate", function()
                 lcprint("Nobody linked")
             else
                 LootLC:AddPlayers() -- ML/RL View
-                getglobal("LootLCWindow"):SetHeight(200 + j * 40)
+                getglobal("LootLCWindow"):SetHeight(170 + j * 40)
             end
 
         else
@@ -1268,7 +1268,7 @@ function comms:recSync(p, t, c, s) -- prefix, text, channel, sender
         for index, player in LootLC.recItems do
             k = k + 1
         end
-        getglobal("LootLCWindow"):SetHeight(200 + k * 40)
+        getglobal("LootLCWindow"):SetHeight(170 + k * 40)
         LootLC:AddPlayers()
     end
     if (string.find(t, 'myVote:', 1, true)) then
@@ -1307,8 +1307,8 @@ function lcWho()
     whoResponderTimer:Show()
 end
 
--- utils
 
+------------------------------------------ utils
 function NameContainer_OnEnter(id)
     local totalItems = 0
     local itemHistory = ""
