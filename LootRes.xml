@@ -3,7 +3,7 @@
     <Script file="LootRes.lua"/>
 
 
-    <Frame name="LootResWindow" hidden="false" toplevel="true"
+    <Frame name="LootResWindow" hidden="true" toplevel="true"
            parent="UIParent" movable="true" enableMouse="true">
         <Size>
             <AbsDimension x="250" y="140"/>

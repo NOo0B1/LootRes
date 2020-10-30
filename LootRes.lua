@@ -89,7 +89,7 @@ LootRes:SetScript("OnEvent", function()
 
                     getglobal('LootResWindowItem'):SetText('Save ' .. item .. ' for ' .. player .. ' ?')
                     if LOOT_RES_LOOT_HISTORY[player] then
-                    getglobal('LootResWindowHistory'):SetText(LOOT_RES_LOOT_HISTORY[player])
+                        getglobal('LootResWindowHistory'):SetText(LOOT_RES_LOOT_HISTORY[player])
                     else
                         getglobal('LootResWindowHistory'):SetText('-no loot history-')
                     end
@@ -171,6 +171,8 @@ LootRes:SetScript("OnShow", function()
     local reservedNumber = 0
     if GameTooltip.itemLink then
         local _, _, itemLink = string.find(GameTooltip.itemLink, "(item:%d+:%d+:%d+:%d+)");
+
+        if not itemLink then return false end
 
         local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
 
@@ -254,7 +256,7 @@ SlashCmdList["LOOTRES"] = function(cmd)
             local W = string.split(cmd, ' ')
             local player = W[2]
             LOOT_RES_LOOT_HISTORY[player] = nil
-            lrprint('Cleared ' .. player ..' ')
+            lrprint('Cleared ' .. player .. ' ')
         end
         if (string.find(cmd, "search", 1)) then
             LootRes:SearchPlayerOrItem(cmd)
@@ -320,12 +322,11 @@ rollTimer:SetScript("OnUpdate", function()
             if (maxRoll ~= 0) then
                 local winners = {}
                 local winnersNo = 0;
-                --                lrprint('LootRes: Winner roll')
+
                 for index, pr in rollers do
                     if (tonumber(pr) == tonumber(maxRoll)) then
                         winners[index] = pr
                         winnersNo = winnersNo + 1
-                        --lrprint('LootRes: ' .. index .. ' with a ' .. pr)
                     end
                 end
                 if (winnersNo == 1) then
@@ -341,7 +342,9 @@ rollTimer:SetScript("OnUpdate", function()
                         end
                     end
 
-                    SendChatMessage("LootRes: Listing recorded rolls - ", "RAID")
+                    if GetZoneText() == "The Molten Core" then
+                        SendChatMessage("LootRes: Listing recorded rolls - ", "RAID")
+                    end
                     for roller, roll in next, rollers do
                         local resOrMsText = '0/1 (nothing reserved)'
                         if LootRes.RESERVES[roller] then
@@ -353,7 +356,9 @@ rollTimer:SetScript("OnUpdate", function()
                             resOrMsText = (table.getn(itemSplit) - 1) .. '/1 ' .. LOOT_RES_LOOT_HISTORY[roller]
                         end
 
-                        ChatThrottleLib:SendChatMessage("BULK", "LOOTRES", roller .. " rolled " .. roll .. ". Won " .. resOrMsText .. "", "RAID")
+                        if GetZoneText() == "The Molten Core" then
+                            ChatThrottleLib:SendChatMessage("BULK", "LOOTRES", roller .. " rolled " .. roll .. ". Won " .. resOrMsText .. "", "RAID")
+                        end
                     end
                 else --tie
                     local tieRollers = ""
@@ -568,11 +573,7 @@ function LootRes:CheckReserves()
     for n, i in next, LootRes.RESERVES do
         lrprint(" checking " .. i)
         local itemName = GetItemInfo(i)
-        --        if (i) then
         lrprint(itemName)
-        --        else
-        --            lrprint(i .. " has errors")
-        --        end
     end
 end
 
@@ -593,29 +594,6 @@ function pairsByKeys(t, f)
 end
 
 LootRes.RESERVES = {
-    ['Reis'] = "Onslaught Girdle",
-    ['Tyrelys'] = "Band of Accuria",
-    ['Smersh'] = "Band of Accuria",
-    ['Er'] = "Cauterizing Band",
-    ['Smultron'] = "Blastershot Launcher",
-    ['Jam'] = "Quick Strike Ring",
-    ['Chlo'] = "Cloak of the Shrouded Mists",
-    ['Aurelian'] = "Band of Accuria",
-    ['Sylph'] = "Onslaught Girdle",
-    ['Fizzles'] = "Azuresong Mageblade",
-    ['Prune'] = "The Eye of Divinity",
-    ['Spacefreeze'] = "Mana Igniting Cord",
-    ['Faralynn'] = "Robe of Volatile Power",
-    ['Laughadin'] = "Drillborer Disk",
-    ['Realniccyb'] = "Talisman of Ephemeral Power",
-    ['Motorboat'] = "Talisman of Ephemeral Power",
-    ['Iamnotjoana'] = "Giantstalker's Epaulets",
-    ['Dragunovi'] = "Core Forged Greaves",
-    ['Faustus'] = "Choker of the Fire Lord",
-    ['Raymundo'] = "Giantstalker's Gloves",
-    ['Ruari'] = "Giantstalker's Leggings",
-    ['Icenips'] = "Netherwind Pants",
-    ['Wither'] = "Giantstalker's Breastplate",
 }
 
 LootRes.BOES = {
