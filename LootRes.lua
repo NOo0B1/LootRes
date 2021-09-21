@@ -16,7 +16,6 @@ local C = secondsToRoll --count to
 local lastRolledItem = "" --offspec roll
 local offspecRoll = false
 
-
 function lrprint(a)
     if a == nil then
         DEFAULT_CHAT_FRAME:AddMessage('|cff69ccf0[LR]|cff0070de:' .. time() .. '|cffffffff attempt to print a nil value.')
@@ -30,7 +29,6 @@ LootRes.Item = ''
 LootRes.Name = ''
 
 LootRes:SetScript("OnEvent", function()
-
     if event then
         if event == 'CHAT_MSG_WHISPER' then
             if arg1 == '-mcres' then
@@ -48,7 +46,7 @@ LootRes:SetScript("OnEvent", function()
             end
         end
         if event == 'CHAT_MSG_LOOT' then
-            if UnitInRaid('player') and GetZoneText() == "The Molten Core" then
+            if UnitInRaid('player') and GetZoneText() == "The Molten Core" or GetZoneText() == "Blackwing Lair" or GetZoneText() == "Ahn'Qiraj" then
                 local lootEx = string.split(arg1, " loot: ")
                 if not lootEx[1] or not lootEx[2] then
                     return false
@@ -64,7 +62,9 @@ LootRes:SetScript("OnEvent", function()
                 local player = realPlayer[1] -- lootEx[1]
                 local item = string.sub(lootEx[2], 1, string.len(lootEx[2]) - 1)
 
-                if string.sub(arg1, 1, 4) == "You " then player = UnitName('player') end
+                if string.sub(arg1, 1, 4) == "You " then
+                    player = UnitName('player')
+                end
 
                 local _, _, itemLink = string.find(item, "(item:%d+:%d+:%d+:%d+)");
 
@@ -78,13 +78,18 @@ LootRes:SetScript("OnEvent", function()
                     return false
                 end
 
-                if (quality >= 4) then --4 for epic
+                if (quality >= 4) then
+                    --4 for epic
 
-                    for key, boe_item in next, LootRes.BOES do
+                    for _, boe_item in next, LootRes.BOES do
                         if name == boe_item then
-                            lrprint('not saved boe item');
+                            --lrprint('not saved boe item');
                             return false
                         end
+                    end
+
+                    if not LootRes:IsRL() then
+                        return false
                     end
 
                     getglobal('LootResWindowItem'):SetText('Save ' .. item .. ' for ' .. player .. ' ?')
@@ -114,7 +119,10 @@ end)
 function saveLast(cmd)
     lrprint(cmd)
     local name = string.split(cmd, ' ')
-    if not name[2] then lrprint('Syntax: /lootres savelast [name]') return false end
+    if not name[2] then
+        lrprint('Syntax: /lootres savelast [name]')
+        return false
+    end
     local player = name[2]
     if LOOT_RES_LOOT_HISTORY[player] == nil then
         LOOT_RES_LOOT_HISTORY[player] = LootRes.Item
@@ -137,17 +145,18 @@ function saveMS()
             LOOT_RES_LOOT_HISTORY[LootRes.Player] = LOOT_RES_LOOT_HISTORY[LootRes.Player] .. ' ' .. LootRes.Item
         end
         SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. LootRes.Player .. " as Reserved or Mainspec.", "RAID")
+
+        LootRes.RESERVES[LootRes.Player] = nil
+
         getglobal('LootResWindow'):Hide()
     end
 end
-
 
 function LootRes:ReserveItem(text, player)
     local newItem = LootResReplace(text, "-mcres ", "")
     local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(newItem)
     lrprint(itemName)
 end
-
 
 function LootRes:CheckMCRes(arg1, arg2)
 
@@ -165,14 +174,15 @@ function LootRes:CheckMCRes(arg1, arg2)
     end
 end
 
-
 LootRes:SetScript("OnShow", function()
 
     local reservedNumber = 0
     if GameTooltip.itemLink then
         local _, _, itemLink = string.find(GameTooltip.itemLink, "(item:%d+:%d+:%d+:%d+)");
 
-        if not itemLink then return false end
+        if not itemLink then
+            return false
+        end
 
         local itemName, _, itemRarity, _, _, _, _, itemSlot, _ = GetItemInfo(itemLink)
 
@@ -204,7 +214,9 @@ LootRes:SetScript("OnHide", function()
 end)
 
 function LootRes:ScanUnit(target)
-    if not UnitIsPlayer(target) then return nil end
+    if not UnitIsPlayer(target) then
+        return nil
+    end
     return 0, 0, 0, 0
 end
 
@@ -280,9 +292,11 @@ function LootRes:SearchPlayerOrItem(search)
 end
 
 function LootResReplace(text, search, replace)
-    if (search == replace) then return text; end
-    local searchedtext = "";
-    local textleft = text;
+    if search == replace then
+        return text
+    end
+    local searchedtext = ""
+    local textleft = text
     while (strfind(textleft, search, 1)) do
         searchedtext = searchedtext .. strsub(textleft, 1, strfind(textleft, search, 1) - 1) .. replace;
         textleft = strsub(textleft, strfind(textleft, search, 1) + strlen(search));
@@ -332,9 +346,15 @@ rollTimer:SetScript("OnUpdate", function()
                 if (winnersNo == 1) then
                     for index, pr in winners do
                         local nice = ""
-                        if (pr == 69) then nice = "(nice)" end
-                        if (pr == 1) then nice = "(oof)" end
-                        if (pr == 100) then nice = "(yeet)" end
+                        if (pr == 69) then
+                            nice = "(nice)"
+                        end
+                        if (pr == 1) then
+                            nice = "(oof)"
+                        end
+                        if (pr == 100) then
+                            nice = "(yeet)"
+                        end
                         if (reservedNames ~= "") then
                             SendChatMessage("LootRes: Highest roll by " .. index .. " with " .. pr .. nice .. " (" .. reservedNames .. " reserved this item)", timerChannel)
                         else
@@ -342,7 +362,7 @@ rollTimer:SetScript("OnUpdate", function()
                         end
                     end
 
-                    if GetZoneText() == "The Molten Core" then
+                    if GetZoneText() == "The Molten Core" or GetZoneText() == "Blackwing Lair" or GetZoneText() == "Ahn'Qiraj" then
                         SendChatMessage("LootRes: Listing recorded rolls - ", "RAID")
                     end
                     for roller, roll in next, rollers do
@@ -356,11 +376,12 @@ rollTimer:SetScript("OnUpdate", function()
                             resOrMsText = (table.getn(itemSplit) - 1) .. '/1 ' .. LOOT_RES_LOOT_HISTORY[roller]
                         end
 
-                        if GetZoneText() == "The Molten Core" then
+                        if GetZoneText() == "The Molten Core" or GetZoneText() == "Blackwing Lair" or GetZoneText() == "Ahn'Qiraj" then
                             ChatThrottleLib:SendChatMessage("BULK", "LOOTRES", roller .. " rolled " .. roll .. ". Won " .. resOrMsText .. "", "RAID")
                         end
                     end
-                else --tie
+                else
+                    --tie
                     local tieRollers = ""
                     local tieRoll = 0
                     for index, pr in winners do
@@ -368,9 +389,15 @@ rollTimer:SetScript("OnUpdate", function()
                         tieRoll = pr
                     end
                     local nice = ""
-                    if (tieRoll == 69) then nice = "(nice)" end
-                    if (tieRoll == 1) then nice = "(oof)" end
-                    if (tieRoll == 100) then nice = "(yeet)" end
+                    if (tieRoll == 69) then
+                        nice = "(nice)"
+                    end
+                    if (tieRoll == 1) then
+                        nice = "(oof)"
+                    end
+                    if (tieRoll == 100) then
+                        nice = "(yeet)"
+                    end
                     if (reservedNames ~= "") then
                         SendChatMessage("LootRes: Highest roll by " .. tieRollers .. " with " .. tieRoll .. nice .. " TIE (" .. reservedNames .. " reserved this item)", timerChannel)
                     else
@@ -526,12 +553,13 @@ function MC_Loot()
                         for player, data in next, peopleWhoReserved do
                             if (player == n) then
                                 peopleWhoReserved[player]['inraid'] = true
-                                if (z ~= "Offline") then peopleWhoReserved[player]['online'] = true end
+                                if (z ~= "Offline") then
+                                    peopleWhoReserved[player]['online'] = true
+                                end
                             end
                         end
                     end
                 end
-
 
                 SendChatMessage(reservedNames .. " ROLL FOR " .. GameTooltip.itemLink .. " " .. secondsToRoll .. " Seconds", timerChannel);
                 rollTimer:Show()
@@ -543,15 +571,33 @@ function MC_Loot()
 
             if boe then
                 local class = ''
-                if string.find(GameTooltip.itemLink, 'Felheart', 1, true) then class = 'WARLOCKS' end
-                if string.find(GameTooltip.itemLink, 'Cenarion', 1, true) then class = 'DRUIDS' end
-                if string.find(GameTooltip.itemLink, 'Nightslayer', 1, true) then class = 'ROGUES' end
-                if string.find(GameTooltip.itemLink, 'Giantstalker', 1, true) then class = 'HUNTERS' end
-                if string.find(GameTooltip.itemLink, 'Arcanist', 1, true) then class = 'MAGES' end
-                if string.find(GameTooltip.itemLink, 'Prophecy', 1, true) then class = 'PRIESTS' end
-                if string.find(GameTooltip.itemLink, 'Might', 1, true) then class = 'WARRIORS' end
-                if string.find(GameTooltip.itemLink, 'Lawbringer', 1, true) then class = 'PALADINS' end
-                if string.find(GameTooltip.itemLink, 'Earthfury', 1, true) then class = 'SHAMANS' end
+                if string.find(GameTooltip.itemLink, 'Felheart', 1, true) then
+                    class = 'WARLOCKS'
+                end
+                if string.find(GameTooltip.itemLink, 'Cenarion', 1, true) then
+                    class = 'DRUIDS'
+                end
+                if string.find(GameTooltip.itemLink, 'Nightslayer', 1, true) then
+                    class = 'ROGUES'
+                end
+                if string.find(GameTooltip.itemLink, 'Giantstalker', 1, true) then
+                    class = 'HUNTERS'
+                end
+                if string.find(GameTooltip.itemLink, 'Arcanist', 1, true) then
+                    class = 'MAGES'
+                end
+                if string.find(GameTooltip.itemLink, 'Prophecy', 1, true) then
+                    class = 'PRIESTS'
+                end
+                if string.find(GameTooltip.itemLink, 'Might', 1, true) then
+                    class = 'WARRIORS'
+                end
+                if string.find(GameTooltip.itemLink, 'Lawbringer', 1, true) then
+                    class = 'PALADINS'
+                end
+                if string.find(GameTooltip.itemLink, 'Earthfury', 1, true) then
+                    class = 'SHAMANS'
+                end
                 SendChatMessage(class .. " ONLY - ROLL " .. GameTooltip.itemLink .. "(BOE) " .. secondsToRoll .. " Seconds", timerChannel);
             else
 
@@ -569,6 +615,21 @@ function MC_Loot()
     end
 end
 
+function LootRes:IsRL()
+    if not UnitInRaid('player') then
+        return false
+    end
+    for i = 0, GetNumRaidMembers() do
+        if GetRaidRosterInfo(i) then
+            local n, r = GetRaidRosterInfo(i);
+            if n == UnitName('player') and r == 2 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function LootRes:CheckReserves()
     for n, i in next, LootRes.RESERVES do
         lrprint(" checking " .. i)
@@ -579,41 +640,68 @@ end
 
 function pairsByKeys(t, f)
     local a = {}
-    for n in pairs(t) do table.insert(a, n)
+    for n in pairs(t) do
+        table.insert(a, n)
     end
-    table.sort(a, function(a, b) return a < b
+    table.sort(a, function(a, b)
+        return a < b
     end)
     local i = 0 -- iterator variable
-    local iter = function() -- iterator function
+    local iter = function()
+        -- iterator function
         i = i + 1
-        if a[i] == nil then return nil
-        else return a[i], t[a[i]]
+        if a[i] == nil then
+            return nil
+        else
+            return a[i], t[a[i]]
         end
     end
     return iter
 end
 
 LootRes.RESERVES = {
+    --['Doomkin'] = 'Talisman of Ephemeral Power',
+    --['Davaeorn'] = 'Choker of the Fire Lord',
+    --['Only'] = 'Onslaught Girdle',
+    --['Ainea'] = 'Giantstalker\'s Boots',
+    --['Zaas'] = 'Earthshaker',
+    --['Armored'] = 'Band of Accuria',
+    --['Yuuko'] = 'Cauterizing Band',
+    --['Looloo'] = 'Lawbringer Helm',
+    --['Deeznutz'] = 'Giantstalker Epaulets',
+    --['Nachichi'] = 'Cauterizing Band',
+    --['Roxy'] = 'Quick Strike Ring',
+    --['Selara'] = 'Azuresong Mageblade',
+    --['Blackskull'] = 'Bonereaver\'s Edge',
+    --['Lyrelle'] = 'Ring of Spell Power',
+    --['Penance'] = 'Aged Core Leather Gloves',
+    --['Paulgreeneye'] = 'Schematic: Biznicks 247x128 Accurascope',
+    --['Fearth'] = 'Band of Accuria',
+    --['Absolon'] = 'Onslaught Girdle',
+    --['Glen'] = 'Onslaught Girdle',
+    --['Sickoverheal'] = 'Cauterizing Band',
+    --['Faralynn'] = 'Heavy Dark Iron Ring',
+    --['Deadeye'] = 'Giantstalker\'s Gloves',
 }
 
 LootRes.BOES = {
-    "Felheart Bracers",
-    "Felheart Belt",
-    "Cenarion Bracers",
-    "Cenarion Belt",
-    "Nightslayer Belt",
-    "Nightslayer Bracelets",
-    "Giantstalker's Bracers",
-    "Giantstalker's Belt",
-    "Arcanist Belt",
-    "Arcanist Bindings",
-    "Girdle of Prophecy",
-    "Vambraces of Prophecy",
-    "Bracers of Might",
-    "Belt of Might",
-    "Lawbringer Belt",
-    "Lawbringer Bracers",
-    "Earthfury Belt",
-    "Earthfury Bracers",
-    "Sulfuron Ingot",
+    "Felheart Bracers ",
+    "Felheart Belt ",
+    "Cenarion Bracers ",
+    "Cenarion Belt ",
+    "Nightslayer Belt ",
+    "Nightslayer Bracelets ",
+    "Giantstalker 's Bracers",
+    "Giantstalker's Belt ",
+    "Arcanist Belt ",
+    "Arcanist Bindings ",
+    "Girdle of Prophecy ",
+    "Vambraces of Prophecy ",
+    "Bracers of Might ",
+    "Belt of Might ",
+    "Lawbringer Belt ",
+    "Lawbringer Bracers ",
+    "Earthfury Belt ",
+    "Earthfury Bracers ",
+    "Sulfuron Ingot ",
 }
