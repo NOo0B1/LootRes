@@ -128,7 +128,11 @@ function saveLast(cmd)
         LOOT_RES_LOOT_HISTORY[player] = LOOT_RES_LOOT_HISTORY[player] .. ' ' .. LootRes.Item
     end
     SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. player .. " as Reserved or Mainspec.", "RAID")
-    SendAddonMessage('TWLC2', "playerWon#" .. player .. "#" .. LootRes.Item .. "#" .. 1 .. "#ms", "RAID")
+
+    TWLC_LOOT_HISTORY[time()] = {
+        ['player'] = player,
+        ['item'] = LootRes.Item
+    }
 
     getglobal('LootResWindow'):Hide()
 end
@@ -145,7 +149,11 @@ function saveMS()
             LOOT_RES_LOOT_HISTORY[LootRes.Player] = LOOT_RES_LOOT_HISTORY[LootRes.Player] .. ' ' .. LootRes.Item
         end
         SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. LootRes.Player .. " as Reserved or Mainspec.", "RAID")
-        SendAddonMessage('TWLC2', "playerWon#" .. player .. "#" .. LootRes.Item .. "#" .. 1 .. "#ms", "RAID")
+
+        TWLC_LOOT_HISTORY[time()] = {
+            ['player'] = LootRes.Player,
+            ['item'] = LootRes.Item
+        }
 
         LootRes.RESERVES[LootRes.Player] = nil
 
@@ -661,7 +669,34 @@ function pairsByKeys(t, f)
 end
 
 LootRes.RESERVES = {
-
+    ['Draxer'] = 'Gauntlets of Annihilation',
+    ['Vargash: Vargash'] = 'Dark Edge of Insanity',
+    ['Zaas: Zaas'] = 'Badge of the Swarmguard',
+    ['Laughadin'] = 'Mark of C\'thun',
+    ['Fizzler'] = 'Eye of C\'thun',
+    ['Zeuz'] = 'Husk of the Old God',
+    ['Looloo'] = 'Skin of the Great Sandworm',
+    ['Only'] = 'Barbed Choker',
+    ['Pepca'] = 'Amulet of Vek\'nilash',
+    ['Nynaeve'] = 'Vek\'lor\'s Diadem',
+    ['Rogiri'] = 'Ancient Qiraji Ripper',
+    ['Newki'] = 'Sartura\'s Might',
+    ['Smersh'] = 'Death\'s Sting',
+    ['Alkatraz'] = 'Badge of the Swarmguard',
+    ['Roxy'] = 'Ring of the Qiraji Fury',
+    ['Sparerib'] = 'Cloak of the Devoured',
+    ['Glen'] = 'Ancient Qiraji Ripper',
+    ['Utherana'] = 'Bracelets of Royal Redemption',
+    ['Armored'] = 'Imperial Qiraji Armaments',
+    ['Hyre'] = 'Hive Defiler Wristguards',
+    ['Talida'] = 'Jom Gabbar',
+    ['Absolon'] = 'Larvae of the Great Worm',
+    ['Slp'] = 'Badge of the Swarmguard',
+    ['Yx'] = 'Vek\'nilash\'s Circlet',
+    ['Garruk'] = 'Barbed Choker',
+    ['Selara'] = 'Imperial Qiraji Regalia',
+    ['Paulgreeneye'] = 'Eyestalk Waist Cord',
+    ['Faralynn'] = 'Qiraji Execution Bracers',
 }
 
 LootRes.BOES = {
