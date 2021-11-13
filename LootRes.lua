@@ -46,6 +46,9 @@ LootRes:SetScript("OnEvent", function()
             if not LOOT_RES_LOOT_HISTORY then
                 LOOT_RES_LOOT_HISTORY = {}
             end
+            if not LOOTRES_RESERVES then
+                LOOTRES_RESERVES ={}
+            end
         end
         if event == 'CHAT_MSG_LOOT' then
             if UnitInRaid('player') and string.find(raids, GetZoneText(), 1, true) then
