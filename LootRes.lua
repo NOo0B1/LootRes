@@ -297,6 +297,9 @@ end
 
 function LootResLoadText()
     local data = getglobal('LootResLoadFromTextTextBox'):GetText()
+
+    getglobal('LootResLoadFromText'):Hide()
+
     if data == '' then
         return false
     end
