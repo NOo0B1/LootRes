@@ -16,7 +16,7 @@ local C = secondsToRoll
 local lastRolledItem = ""
 local offspecRoll = false
 
-local raids = 'The Molten Core Blackwing Lair Ahn\'Qiraj Zul\'Gurub'
+local raids = 'The Molten Core Blackwing Lair Ahn\'Qiraj Zul\'Gurub Ruins of Ahn\'Qiraj'
 
 function lrprint(a)
     if a == nil then
@@ -80,7 +80,9 @@ LootRes:SetScript("OnEvent", function()
                     return false
                 end
 
-                if quality >= 4 then
+                local minT = GetZoneText() == 'Ruins of Ahn\'Qiraj' and 3 or 4
+
+                if quality >= minT then
                     --4 for epic
 
                     for _, boe_item in next, LootRes.BOES do
@@ -129,10 +131,10 @@ function saveLast(cmd)
     end
     SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. player .. " as Reserved or Mainspec.", "RAID")
 
-    TWLC_LOOT_HISTORY[time()] = {
-        ['player'] = player,
-        ['item'] = LootRes.Item
-    }
+    --TWLC_LOOT_HISTORY[time()] = {
+    --    ['player'] = player,
+    --    ['item'] = LootRes.Item
+    --}
 
     getglobal('LootResWindow'):Hide()
 end
@@ -142,7 +144,7 @@ function saveMS()
     if not LOOT_RES_LOOT_HISTORY[LootRes.Player] then
         LOOT_RES_LOOT_HISTORY[LootRes.Player] = nil
     end
-    if LootRes.RESERVES[LootRes.Player] == LootRes.Name or not offspecRoll then
+    if LOOTRES_RESERVES[LootRes.Player] == LootRes.Name or not offspecRoll then
         if LOOT_RES_LOOT_HISTORY[LootRes.Player] == nil then
             LOOT_RES_LOOT_HISTORY[LootRes.Player] = LootRes.Item
         else
@@ -150,12 +152,12 @@ function saveMS()
         end
         SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. LootRes.Player .. " as Reserved or Mainspec.", "RAID")
 
-        TWLC_LOOT_HISTORY[time()] = {
-            ['player'] = LootRes.Player,
-            ['item'] = LootRes.Item
-        }
+        --TWLC_LOOT_HISTORY[time()] = {
+        --    ['player'] = LootRes.Player,
+        --    ['item'] = LootRes.Item
+        --}
 
-        LootRes.RESERVES[LootRes.Player] = nil
+        LOOTRES_RESERVES[LootRes.Player] = nil
 
         getglobal('LootResWindow'):Hide()
     end
@@ -171,7 +173,7 @@ function LootRes:CheckMCRes(arg1, arg2)
 
     local foundRes = false
 
-    for playerName, item in next, LootRes.RESERVES do
+    for playerName, item in next, LOOTRES_RESERVES do
         if (playerName == arg2) then
             SendChatMessage("LootRes: Your MC Res : [" .. item .. "]", "WHISPER", "Common", arg2);
             foundRes = true
@@ -195,7 +197,7 @@ LootRes:SetScript("OnShow", function()
 
         local itemName, _, itemRarity = GetItemInfo(itemLink)
 
-        for _, item in next, LootRes.RESERVES do
+        for _, item in next, LOOTRES_RESERVES do
             if string.lower(itemName) == string.lower(item) then
                 reservedNumber = reservedNumber + 1
             end
@@ -206,7 +208,7 @@ LootRes:SetScript("OnShow", function()
             GameTooltip:AddLine("Soft-Reserved List (" .. reservedNumber .. ")")
 
             if (reservedNumber > 0) then
-                for playerName, item in next, LootRes.RESERVES do
+                for playerName, item in next, LOOTRES_RESERVES do
                     if (string.lower(itemName) == string.lower(item)) then
                         GameTooltip:AddLine(playerName, 1, 1, 1)
                     end
@@ -252,7 +254,15 @@ SlashCmdList["LOOTRES"] = function(cmd)
             LootRes:PrintReserves()
         end
         if cmd == 'load' then
-            LootRes:LoadFromText()
+            getglobal('LootResLoadFromTextTextBox'):SetText("")
+            getglobal('LootResLoadFromText'):Show()
+        end
+        if cmd == 'loadold' then
+            LOOTRES_RESERVES = LootRes.RESERVES
+            lrprint("Loaded from old way")
+            for player, item in LOOTRES_RESERVES do
+                lrprint("Player: " ..player .. ", item: " .. item)
+            end
         end
         if cmd == 'check' then
             LootRes:CheckReserves()
@@ -264,8 +274,8 @@ SlashCmdList["LOOTRES"] = function(cmd)
         if string.find(cmd, 'view', 1, true) then
             local W = string.split(cmd, ' ')
             local player = W[2]
-            if LootRes.RESERVES[player] then
-                lrprint(player .. ' reserved ' .. LootRes.RESERVES[player])
+            if LOOTRES_RESERVES[player] then
+                lrprint(player .. ' reserved ' .. LOOTRES_RESERVES[player])
             end
             if not LOOT_RES_LOOT_HISTORY[player] then
                 lrprint(player .. ' - nothing looted ')
@@ -284,14 +294,67 @@ SlashCmdList["LOOTRES"] = function(cmd)
         end
     end
 end
-function LootRes:LoadFromText()
-    local pasteData = loadstring(getglobal('LootResLoadFromTextTextBox'):GetText())
-    lrprint(pasteData)
+
+function LootResLoadText()
+    local data = getglobal('LootResLoadFromTextTextBox'):GetText()
+    if data == '' then
+        return false
+    end
+
+    data = LootResReplace(data, "Formula:", "Formula*dd*")
+    data = LootResReplace(data, "Plans:", "Plans*dd*")
+    data = LootResReplace(data, "Recipe:", "Recipe*dd*")
+    data = LootResReplace(data, "Guide:", "Guide*dd*")
+
+    LOOTRES_RESERVES = {}
+
+    data = LootRes.explode(data, "[")
+
+    for i, d in data do
+        if string.find(d, ']', 1, true) then
+            local pl = LootRes.explode(d, ']')
+            local pl2 = LootRes.explode(pl[2], ':')
+            local playerData = LootRes.explode(pl2[2], '-')
+            local player = nil
+            local item = nil
+            for k, da in playerData do
+                if k == 1 then
+                    player = LootRes.trim(da)
+                end
+                if k == 2 then
+                    item = LootRes.trim(da)
+
+                    item = LootResReplace(item, "Formula*dd*", "Formula:")
+                    item = LootResReplace(item, "Plans*dd*", "Plans:")
+                    item = LootResReplace(item, "Recipe*dd*", "Recipe:")
+                    item = LootResReplace(item, "Guide*dd*", "Guide:")
+                end
+                if k == 3 then
+                    item = LootRes.trim(playerData[2] .. "-" .. playerData[3])
+
+                    item = LootResReplace(item, "Formula*dd*", "Formula:")
+                    item = LootResReplace(item, "Plans*dd*", "Plans:")
+                    item = LootResReplace(item, "Recipe*dd*", "Recipe:")
+                    item = LootResReplace(item, "Guide*dd*", "Guide:")
+                end
+                if player and item then
+                    LOOTRES_RESERVES[player] = item
+                end
+
+            end
+        end
+    end
+
+    lrprint("Loaded reserves:")
+
+    for player, item in LOOTRES_RESERVES do
+        lrprint("Player: " ..player .. ", item: " .. item)
+    end
 end
 
 function LootRes:PrintReserves()
 
-    for playerName, item in next, LootRes.RESERVES do
+    for playerName, item in next, LOOTRES_RESERVES do
         lrprint(playerName .. ":" .. item)
     end
 end
@@ -306,14 +369,14 @@ function LootResReplace(text, search, replace)
     end
     local searchedtext = ""
     local textleft = text
-    while (strfind(textleft, search, 1)) do
-        searchedtext = searchedtext .. strsub(textleft, 1, strfind(textleft, search, 1) - 1) .. replace;
-        textleft = strsub(textleft, strfind(textleft, search, 1) + strlen(search));
+    while string.find(textleft, search, 1, true) do
+        searchedtext = searchedtext .. string.sub(textleft, 1, string.find(textleft, search, 1, true) - 1) .. replace
+        textleft = string.sub(textleft, string.find(textleft, search, 1, true) + string.len(search))
     end
-    if (strlen(textleft) > 0) then
-        searchedtext = searchedtext .. textleft;
+    if string.len(textleft) > 0 then
+        searchedtext = searchedtext .. textleft
     end
-    return searchedtext;
+    return searchedtext
 end
 
 local timerChannel = "RAID_WARNING"
@@ -376,8 +439,8 @@ rollTimer:SetScript("OnUpdate", function()
                     end
                     for roller, roll in next, rollers do
                         local resOrMsText = '0/1 (nothing reserved)'
-                        if LootRes.RESERVES[roller] then
-                            resOrMsText = '0/1 ' .. LootRes.RESERVES[roller] .. ' (reserved)'
+                        if LOOTRES_RESERVES[roller] then
+                            resOrMsText = '0/1 ' .. LOOTRES_RESERVES[roller] .. ' (reserved)'
                         end
 
                         if LOOT_RES_LOOT_HISTORY[roller] ~= nil then
@@ -482,7 +545,7 @@ function MC_Loot()
 
         local reservedNumber = 0;
 
-        for _, item in next, LootRes.RESERVES do
+        for _, item in next, LOOTRES_RESERVES do
             if string.lower(itemName) == string.lower(item) then
                 reservedNumber = reservedNumber + 1
             end
@@ -505,7 +568,7 @@ function MC_Loot()
         if reservedNumber > 0 then
             -- RESERVED
 
-            for playerName, item in next, LootRes.RESERVES do
+            for playerName, item in next, LOOTRES_RESERVES do
                 if string.lower(itemName) == string.lower(item) then
                     reservedNames = reservedNames .. " " .. playerName;
                 end
@@ -519,7 +582,7 @@ function MC_Loot()
                 for i = 0, GetNumRaidMembers() do
                     if GetRaidRosterInfo(i) then
                         local n, _, _, _, _, _, z = GetRaidRosterInfo(i);
-                        if n == trim(reservedNames) then
+                        if n == LootRes.trim(reservedNames) then
                             isInRaid = true
                             isOnline = z ~= "Offline"
                         end
@@ -527,26 +590,26 @@ function MC_Loot()
                 end
                 if isInRaid then
                     if isOnline then
-                        SendChatMessage(trim(reservedNames) .. " (in raid) is the only one who reserved " .. GameTooltip.itemLink .. " ", timerChannel);
-                        if LOOT_RES_LOOT_HISTORY[trim(reservedNames)] then
-                            if LOOT_RES_LOOT_HISTORY[trim(reservedNames)] ~= '' then
-                                SendChatMessage(trim(reservedName) .. " got " .. LOOT_RES_LOOT_HISTORY[trim(reservedNames)] .. " this run.")
+                        SendChatMessage(LootRes.trim(reservedNames) .. " (in raid) is the only one who reserved " .. GameTooltip.itemLink .. " ", timerChannel);
+                        if LOOT_RES_LOOT_HISTORY[LootRes.trim(reservedNames)] then
+                            if LOOT_RES_LOOT_HISTORY[LootRes.trim(reservedNames)] ~= '' then
+                                SendChatMessage(LootRes.trim(reservedName) .. " got " .. LOOT_RES_LOOT_HISTORY[LootRes.trim(reservedNames)] .. " this run.")
                             end
                         end
                     else
-                        SendChatMessage(trim(reservedNames) .. " (offline) reserved " .. GameTooltip.itemLink .. ". Anyone can roll !", timerChannel);
+                        SendChatMessage(LootRes.trim(reservedNames) .. " (offline) reserved " .. GameTooltip.itemLink .. ". Anyone can roll !", timerChannel);
                         rollTimer:Show()
                         rollsOpen = true
                     end
                 else
-                    SendChatMessage(trim(reservedNames) .. " (not in raid) is the only one who reserved " .. GameTooltip.itemLink .. ". Anyone can roll as MAIN SPEC ! " .. secondsToRoll .. " Seconds", timerChannel);
+                    SendChatMessage(LootRes.trim(reservedNames) .. " (not in raid) is the only one who reserved " .. GameTooltip.itemLink .. ". Anyone can roll as MAIN SPEC ! " .. secondsToRoll .. " Seconds", timerChannel);
                     rollTimer:Show()
                     rollsOpen = true
                 end
             else
                 --if more than one reserved it, check who's online and offline, and inraid
                 local peopleWhoReserved = {}
-                for playerName, item in next, LootRes.RESERVES do
+                for playerName, item in next, LOOTRES_RESERVES do
                     if string.lower(itemName) == string.lower(item) then
                         peopleWhoReserved[playerName] = {
                             online = false,
@@ -640,7 +703,7 @@ function LootRes:IsRL()
 end
 
 function LootRes:CheckReserves()
-    for n, i in next, LootRes.RESERVES do
+    for n, i in next, LOOTRES_RESERVES do
         lrprint(" checking " .. i)
         local itemName = GetItemInfo(i)
         lrprint(itemName)
@@ -669,34 +732,7 @@ function pairsByKeys(t, f)
 end
 
 LootRes.RESERVES = {
-    ['Draxer'] = 'Gauntlets of Annihilation',
-    ['Vargash: Vargash'] = 'Dark Edge of Insanity',
-    ['Zaas: Zaas'] = 'Badge of the Swarmguard',
-    ['Laughadin'] = 'Mark of C\'thun',
-    ['Fizzler'] = 'Eye of C\'thun',
-    ['Zeuz'] = 'Husk of the Old God',
-    ['Looloo'] = 'Skin of the Great Sandworm',
-    ['Only'] = 'Barbed Choker',
-    ['Pepca'] = 'Amulet of Vek\'nilash',
-    ['Nynaeve'] = 'Vek\'lor\'s Diadem',
-    ['Rogiri'] = 'Ancient Qiraji Ripper',
-    ['Newki'] = 'Sartura\'s Might',
-    ['Smersh'] = 'Death\'s Sting',
-    ['Alkatraz'] = 'Badge of the Swarmguard',
-    ['Roxy'] = 'Ring of the Qiraji Fury',
-    ['Sparerib'] = 'Cloak of the Devoured',
-    ['Glen'] = 'Ancient Qiraji Ripper',
-    ['Utherana'] = 'Bracelets of Royal Redemption',
-    ['Armored'] = 'Imperial Qiraji Armaments',
-    ['Hyre'] = 'Hive Defiler Wristguards',
-    ['Talida'] = 'Jom Gabbar',
-    ['Absolon'] = 'Larvae of the Great Worm',
-    ['Slp'] = 'Badge of the Swarmguard',
-    ['Yx'] = 'Vek\'nilash\'s Circlet',
-    ['Garruk'] = 'Barbed Choker',
-    ['Selara'] = 'Imperial Qiraji Regalia',
-    ['Paulgreeneye'] = 'Eyestalk Waist Cord',
-    ['Faralynn'] = 'Qiraji Execution Bracers',
+    ['Er'] = 'test'
 }
 
 LootRes.BOES = {
@@ -720,3 +756,23 @@ LootRes.BOES = {
     "Earthfury Bracers",
     "Sulfuron Ingot",
 }
+
+function LootRes.trim(s)
+    if not s then
+        return false
+    end
+    return string.gsub(s, "^%s*(.-)%s*$", "%1")
+end
+
+function LootRes.explode(str, delimiter)
+    local result = {}
+    local from = 1
+    local delim_from, delim_to = string.find(str, delimiter, from, 1, true)
+    while delim_from do
+        table.insert(result, string.sub(str, from, delim_from - 1))
+        from = delim_to + 1
+        delim_from, delim_to = string.find(str, delimiter, from, true)
+    end
+    table.insert(result, string.sub(str, from))
+    return result
+end
