@@ -120,7 +120,7 @@ end)
 
 --when player is too far away & loot received is not visible
 function saveLast(cmd)
-    lrprint(cmd)
+
     local name = string.split(cmd, ' ')
     if not name[2] then
         lrprint('Syntax: /lootres savelast [name]')
@@ -138,6 +138,8 @@ function saveLast(cmd)
         ['player'] = player,
         ['item'] = LootRes.Item
     }
+
+    LOOTRES_RESERVES[player] = nil
 
     getglobal('LootResWindow'):Hide()
 end
