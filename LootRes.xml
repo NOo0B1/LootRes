@@ -57,7 +57,7 @@
                 </Scripts>
             </Button>
 
-            <EditBox name="$parentTextBox" multiLine="true" letters="1500" autoFocus="false">
+            <EditBox name="$parentTextBox" multiLine="true" letters="5500" autoFocus="false">
                 <Anchors>
                     <Anchor point="TOP">
                         <Offset>
