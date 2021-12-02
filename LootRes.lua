@@ -134,10 +134,12 @@ function saveLast(cmd)
     end
     SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. player .. " as Reserved or Mainspec.", "RAID")
 
-    TWLC_LOOT_HISTORY[time()] = {
-        ['player'] = player,
-        ['item'] = LootRes.Item
-    }
+    if TWLC_LOOT_HISTORY then
+        TWLC_LOOT_HISTORY[time()] = {
+            ['player'] = player,
+            ['item'] = LootRes.Item
+        }
+    end
 
     LOOTRES_RESERVES[player] = nil
 
@@ -157,10 +159,12 @@ function saveMS()
         end
         SendChatMessage("LootRes: Saved " .. LootRes.Item .. " for " .. LootRes.Player .. " as Reserved or Mainspec.", "RAID")
 
-        TWLC_LOOT_HISTORY[time()] = {
-            ['player'] = LootRes.Player,
-            ['item'] = LootRes.Item
-        }
+        if TWLC_LOOT_HISTORY then
+            TWLC_LOOT_HISTORY[time()] = {
+                ['player'] = LootRes.Player,
+                ['item'] = LootRes.Item
+            }
+        end
 
         LOOTRES_RESERVES[LootRes.Player] = nil
 
