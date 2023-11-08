@@ -320,42 +320,78 @@ function LootResLoadText()
 
     LOOTRES_RESERVES = {}
 
-    data = LootRes.explode(data, "[")
+    --data = LootRes.explode(data, "\n")
+	
+	local _, countMatchData = string.gsub(data, "%a+%s%-%s[%w%s]+\n", "")
+		
+	for i = 1, countMatchData+1, 1 do
+		local player = nil
+        local item = nil
+		
+		if i == countMatchData+1 then
+			j,k,player,item=string.find(data, "^(%a+)%s%-%s([%w%s]+)")
+		else
+			j,k,player,item=string.find(data, "^(%a+)%s%-%s([%w%s]+)\n")
+		end
+		
+		SendChatMessage(j, "WHISPER", nil, "Restinbeat");
+		SendChatMessage(k, "WHISPER", nil, "Restinbeat");
+		SendChatMessage(player, "WHISPER", nil, "Restinbeat");
+		SendChatMessage(item, "WHISPER", nil, "Restinbeat");
+		item = LootResReplace(item, "Formula*dd*", "Formula:")
+		item = LootResReplace(item, "Plans*dd*", "Plans:")
+		item = LootResReplace(item, "Recipe*dd*", "Recipe:")
+		item = LootResReplace(item, "Guide*dd*", "Guide:")
+		data=string.sub(data,j+k)
+		if player and item then
+			LOOTRES_RESERVES[player] = item
+		end		
+	end
 
-    for i, d in data do
-        if string.find(d, ']', 1, true) then
-            local pl = LootRes.explode(d, ']')
-            local pl2 = LootRes.explode(pl[2], ':')
-            local playerData = LootRes.explode(pl2[2], '-')
-            local player = nil
-            local item = nil
-            for k, da in playerData do
-                if k == 1 then
-                    player = LootRes.trim(da)
-                end
-                if k == 2 then
-                    item = LootRes.trim(da)
-
-                    item = LootResReplace(item, "Formula*dd*", "Formula:")
-                    item = LootResReplace(item, "Plans*dd*", "Plans:")
-                    item = LootResReplace(item, "Recipe*dd*", "Recipe:")
-                    item = LootResReplace(item, "Guide*dd*", "Guide:")
-                end
-                if k == 3 then
-                    item = LootRes.trim(playerData[2] .. "-" .. playerData[3])
-
-                    item = LootResReplace(item, "Formula*dd*", "Formula:")
-                    item = LootResReplace(item, "Plans*dd*", "Plans:")
-                    item = LootResReplace(item, "Recipe*dd*", "Recipe:")
-                    item = LootResReplace(item, "Guide*dd*", "Guide:")
-                end
-                if player and item then
-                    LOOTRES_RESERVES[player] = item
-                end
-
-            end
-        end
-    end
+	
+	--for line in string.gmatch("JeanTankun - Halberd of Smiting\r\ntestson - Purple Hakkari Bijou",'[^\r\n]+') do
+	--
+    ----for i,d in data do
+    --    --if string.find(d, ']', 1, true) then
+    --        --local pl = LootRes.explode(d, ']')
+    --        --local pl2 = LootRes.explode(pl[2], ':')
+    --        
+	--		local playerData = LootRes.explode(line, ' - ')
+    --        local player = nil
+    --        local item = nil
+	--		
+	--		
+	--		--for k, da in playerData do
+	--		--	SendChatMessage(i.. " " .. "d" .. k.." - " .. da, "SAY", nil, "guild");
+	--		--end
+	--		
+    --        for k, da in playerData do
+    --            if k == 1 then
+    --                player = da
+    --            end
+    --            if k == 2 then
+    --                item = da
+	--
+    --                item = LootResReplace(item, "Formula*dd*", "Formula:")
+    --                item = LootResReplace(item, "Plans*dd*", "Plans:")
+    --                item = LootResReplace(item, "Recipe*dd*", "Recipe:")
+    --                item = LootResReplace(item, "Guide*dd*", "Guide:")
+    --            end
+    --            --if k == 3 then
+    --            --    item = LootRes.trim(playerData[2] .. "-" .. playerData[3])
+	--			--
+    --            --    item = LootResReplace(item, "Formula*dd*", "Formula:")
+    --            --    item = LootResReplace(item, "Plans*dd*", "Plans:")
+    --            --    item = LootResReplace(item, "Recipe*dd*", "Recipe:")
+    --            --    item = LootResReplace(item, "Guide*dd*", "Guide:")
+    --            --end
+    --            if player and item then
+    --                LOOTRES_RESERVES[player] = item
+    --            end
+	--
+    --        end
+    --    --end
+    --end
 
     lrprint("Loaded reserves:")
 
