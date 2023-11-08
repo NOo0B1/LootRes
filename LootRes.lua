@@ -333,11 +333,7 @@ function LootResLoadText()
 		else
 			j,k,player,item=string.find(data, "^(%a+)%s%-%s([%w%s]+)\n")
 		end
-		
-		SendChatMessage(j, "WHISPER", nil, "Restinbeat");
-		SendChatMessage(k, "WHISPER", nil, "Restinbeat");
-		SendChatMessage(player, "WHISPER", nil, "Restinbeat");
-		SendChatMessage(item, "WHISPER", nil, "Restinbeat");
+
 		item = LootResReplace(item, "Formula*dd*", "Formula:")
 		item = LootResReplace(item, "Plans*dd*", "Plans:")
 		item = LootResReplace(item, "Recipe*dd*", "Recipe:")
